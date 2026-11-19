@@ -112,6 +112,18 @@ Journal schema, transaction boundaries, concurrency, retry schedules, and API co
 - Record enrollment, challenge, recovery, reset, and factor replacement security events without logging secrets or OTP values.
 - Exact step-up authentication rules, recovery evidence, lockout/rate limits, and emergency break-glass procedures remain Level 5 design details.
 
+### ADL-006 — Data retention and privacy framework
+**Decision:** Define retention separately for each data category; do not apply one universal retention duration to all platform data.
+
+- **Financial records:** Retain according to applicable legal, tax, accounting, and regulatory requirements.
+- **Security audit records:** Define and enforce a documented security-retention period appropriate to investigation and compliance needs.
+- **Device records:** Preserve expired, inactive, replaced, and revoked device history for audit purposes, subject to a defined retention policy.
+- **Personal data:** Apply data minimization; delete or anonymize personal data when it is no longer required for a legitimate purpose or applicable retention obligation.
+- Retention and deletion rules must account for legal holds, disputes, investigations, and required record preservation.
+- Access to retained data must be restricted by role and purpose; retention does not imply unrestricted operational access.
+- Define retention periods, deletion/anonymization procedures, legal-hold handling, and exceptions through a documented data-category schedule after jurisdiction-specific legal review.
+- Exact durations and implementation details remain pending; this decision does not authorize indefinite retention by default.
+
 ## Pending decisions
 | ID | Topic | Status |
 |---|---|---|
@@ -119,7 +131,7 @@ Journal schema, transaction boundaries, concurrency, retry schedules, and API co
 | ADL-003 details | Clock rollback, renewal protocol, grace-mode capability restrictions and revocation behavior | Pending Level 5 design |
 | ADL-004 details | Replacement authorization, offline-device handling and verification protocol | Pending Level 5 design |
 | ADL-005 details | Step-up rules, recovery verification, lockout/rate limits and break-glass procedure | Pending Level 5 design |
-| ADL-006 | Privacy/legal retention detail | Pending |
+| ADL-006 details | Per-category durations, deletion/anonymization schedule, legal holds and jurisdictional review | Pending Level 5/policy detail |
 | ADL-008 details | Full-refund policy precedence/default and dispute/chargeback policy precedence/default | Pending |
 | ADL-010 | Business ownership recovery | Pending |
 
