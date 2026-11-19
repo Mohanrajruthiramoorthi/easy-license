@@ -148,6 +148,16 @@ Journal schema, transaction boundaries, concurrency, retry schedules, and API co
 - A consuming application remains authoritative for its feature catalogue and may change its definitions without requiring Easy License to understand those features.
 - Exact registration schema, type system, validation contract, and versioning are Level 5 API design details.
 
+### ADL-012 — Payment information recordkeeping only
+**Decision:** Easy License stores payment details as records for reference and audit, but does not process, collect, initiate, verify, settle, refund, or otherwise handle payments.
+
+- Store payment information supplied by an authorized consuming application or administrator, such as amount, currency, payment method/type, external transaction/reference ID, reported status, payment date/time, and optional receipt/reference metadata.
+- Treat recorded payment status and references as externally supplied information; Easy License does not independently confirm that funds were received.
+- Payment records do not automatically activate, extend, suspend, or revoke a licence. Licence lifecycle changes are explicit operations performed through the licence-management capability.
+- Do not store card numbers, CVV, bank login credentials, UPI PINs, passwords, or other payment authentication secrets.
+- Payment gateway integrations, checkout, collection, settlement, refunds, disputes, chargebacks, and payment reconciliation are outside the platform's current scope.
+- Exact record schema, allowed status vocabulary, provenance, and API permissions are Level 5 design details.
+
 ## Pending decisions
 | ID | Topic | Status |
 |---|---|---|
