@@ -158,6 +158,17 @@ Journal schema, transaction boundaries, concurrency, retry schedules, and API co
 - Payment gateway integrations, checkout, collection, settlement, refunds, disputes, chargebacks, and payment reconciliation are outside the platform's current scope.
 - Exact record schema, allowed status vocabulary, provenance, and API permissions are Level 5 design details.
 
+### ADL-013 — Licence creation channels
+**Decision:** Support both administrator-initiated licence creation and authorized consuming-application API requests for licence creation. Both channels use the same licence records, validation rules, lifecycle, and audit requirements.
+
+- Administrators may create licences through authorized administrative operations.
+- Registered and authorized consuming applications may request licence creation through the versioned Integration API.
+- API requests must be authenticated, authorized, validated, and protected against duplicate/replayed operations using stable idempotency identities.
+- The caller and creation channel must be recorded for audit.
+- Neither channel may bypass licence validity, status, device, or entitlement constraints.
+- Licence creation does not require Easy License to process or verify payment; any payment information is reference data only.
+- Exact API contract, authorization scopes, required fields, and approval controls are Level 5 design details.
+
 ## Pending decisions
 | ID | Topic | Status |
 |---|---|---|
