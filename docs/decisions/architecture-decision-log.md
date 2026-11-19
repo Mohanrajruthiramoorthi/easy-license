@@ -325,6 +325,18 @@ Journal schema, transaction boundaries, concurrency, retry schedules, and API co
 - Use pagination for result sets; exact sorting options, page limits, search matching behavior, and API/UI contracts are Level 5 design details.
 - Internal notes and custom metadata are not included in ordinary search results unless an authorized administrative view explicitly requests them.
 
+### ADL-029 — Business and consuming-product management
+**Decision:** Easy License provides basic registration and administration of businesses and consuming products. Licences associate a business with a registered consuming product.
+
+- Authorized administrators can register, view, update, activate, and deactivate business records.
+- Authorized administrators can register, view, update, activate, and deactivate consuming-product records.
+- A licence associates exactly one business with exactly one registered consuming product, as defined by ADL-014.
+- Deactivating a consuming product prevents new licence creation and normal validation for that product; existing licence and audit history remain preserved.
+- Deactivating a business prevents new licence creation and normal validation for that business; existing licence and audit history remain preserved.
+- Reactivation is an explicit authorized administrative operation and does not itself reactivate, extend, or otherwise modify individual licences.
+- Record administrative changes and activation/deactivation actions in audit history.
+- Exact business/product fields, deactivation consequences, reactivation controls, and API/UI contracts are Level 5 design details.
+
 ## Pending decisions
 | ID | Topic | Status |
 |---|---|---|
