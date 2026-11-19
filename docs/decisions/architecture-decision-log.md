@@ -38,6 +38,14 @@ Journal schema, transaction boundaries, concurrency, retry schedules, and API co
 - The strategy and its valid value type must be defined for each entitlement. Do not apply SUM or another numeric strategy to an incompatible entitlement type.
 - Deterministic precedence and tie-breakers for ordinary OVERRIDE sources still require detailed design.
 
+### ADL-009 — Subscription repurchase after expiry
+**Decision:** When an expired subscription is purchased again after its previous licence has expired, issue a **new licence ID**. Preserve the old licence and its terminal expiry history; do not reactivate or recycle its ID.
+
+- The new purchase follows the normal payment confirmation → subscription activation → licence issuance → entitlement resolution workflow.
+- The new licence has its own validity period and lifecycle history.
+- The new licence may reference the prior subscription/licence lineage for audit and customer history.
+- This decision applies to a new purchase after expiry; it does not define reinstatement during an active grace period or correction of an erroneous expiry. Those cases require their own rules.
+
 ## Pending decisions
 | ID | Topic | Status |
 |---|---|---|
@@ -47,7 +55,6 @@ Journal schema, transaction boundaries, concurrency, retry schedules, and API co
 | ADL-005 | MFA/SMS recovery | Pending |
 | ADL-006 | Privacy/legal retention detail | Pending |
 | ADL-008 | Refund/partial refund/dispute/chargeback effects | Pending |
-| ADL-009 | Subscription reinstatement/licence reissue after expiry | Pending |
 | ADL-010 | Business ownership recovery | Pending |
 
 Pending decisions must not silently become policy.
