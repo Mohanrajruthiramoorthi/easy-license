@@ -304,6 +304,17 @@ Journal schema, transaction boundaries, concurrency, retry schedules, and API co
 - Reinstatement is permitted only when the licence remains eligible and has not been revoked or otherwise become terminal.
 - Exact transition eligibility, history schema, and authorization scopes are Level 5 design details.
 
+### ADL-027 — Licence internal notes and custom metadata
+**Decision:** Support internal administrative notes and custom metadata on licence records without changing licence lifecycle or validation behavior.
+
+- Authorized administrators may add internal notes to a licence for operational context.
+- Support structured custom metadata for administrative/reference purposes.
+- Notes and metadata do not alter licence status, validity, ownership, product association, device limits, or entitlement values.
+- Notes and metadata are not returned in normal consuming-application licence validation responses.
+- Record who added or changed notes/metadata and when; preserve an audit history of changes.
+- Restrict access to internal notes and metadata to authorized administrative roles.
+- Exact metadata schema, size/type limits, editing/deletion semantics, and API permissions are Level 5 design details.
+
 ## Pending decisions
 | ID | Topic | Status |
 |---|---|---|
