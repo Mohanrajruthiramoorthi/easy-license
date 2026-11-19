@@ -201,6 +201,16 @@ Journal schema, transaction boundaries, concurrency, retry schedules, and API co
 - Lifecycle transitions must be performed through authorized licence-management operations and recorded in audit history.
 - Exact transition matrix, eligibility checks, and API representation are Level 5 design details.
 
+### ADL-017 — Multiple active licences for the same product
+**Decision:** A business may hold multiple active licences for the same registered consuming product.
+
+- Each licence has its own permanent, unique licence ID.
+- Each licence maintains its own validity period, lifecycle status, and entitlement data.
+- Licences are independent records; changing or ending one licence does not implicitly change another.
+- The consuming application must identify the specific licence in validation requests; Easy License validates that licence against the authenticated business and registered product.
+- Whether entitlements from multiple licences are combined, selected, or treated independently is not decided here; the consuming application must not assume automatic aggregation. Any platform-level aggregation behavior requires a separate explicit decision.
+- Exact API selection and validation fields are Level 5 design details.
+
 ## Pending decisions
 | ID | Topic | Status |
 |---|---|---|
