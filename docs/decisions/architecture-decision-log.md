@@ -97,12 +97,27 @@ Journal schema, transaction boundaries, concurrency, retry schedules, and API co
 - Reactivation remains subject to current account, business membership, licence, entitlement, and device-capacity checks.
 - Exact verification protocol and treatment of active offline leases remain Level 5 design details.
 
+### ADL-004 — Device inactivity and capacity
+**Inactivity and reactivation:**
+- A device is automatically marked inactive after 90 consecutive days without successful contact with Easy License.
+- Inactivity does not delete the device record or its history and does not itself revoke a licence.
+- Reactivation requires the device to authenticate with Easy License again and complete device verification.
+- A local offline lease alone cannot reactivate an inactive device.
+- Reactivation is subject to current account, business membership, licence, entitlement, and device-capacity checks.
+
+**Capacity enforcement:**
+- A new device registration that would exceed the configured active-device entitlement is rejected by default.
+- The consuming product or its user must use an explicit device-replacement flow to deactivate an existing device before registering the replacement.
+- Replacement must be an explicit, authorized operation; do not silently deactivate another device or temporarily exceed the limit.
+- Preserve the replaced device's history and audit the replacement action.
+- Exact replacement authorization, offline-device handling, and verification protocol remain Level 5 design details.
+
 ## Pending decisions
 | ID | Topic | Status |
 |---|---|---|
 | ADL-002 details | Ordinary OVERRIDE source precedence and tie-breakers | Pending Level 5 design |
 | ADL-003 details | Clock rollback, renewal protocol, grace-mode capability restrictions and revocation behavior | Pending Level 5 design |
-| ADL-004 details | Verification protocol, offline lease interaction and capacity enforcement | Pending Level 5 design |
+| ADL-004 details | Replacement authorization, offline-device handling and verification protocol | Pending Level 5 design |
 | ADL-005 | MFA/SMS recovery | Pending |
 | ADL-006 | Privacy/legal retention detail | Pending |
 | ADL-008 details | Full-refund policy precedence/default and dispute/chargeback policy precedence/default | Pending |
