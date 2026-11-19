@@ -315,6 +315,16 @@ Journal schema, transaction boundaries, concurrency, retry schedules, and API co
 - Restrict access to internal notes and metadata to authorized administrative roles.
 - Exact metadata schema, size/type limits, editing/deletion semantics, and API permissions are Level 5 design details.
 
+### ADL-028 — Administrative licence search and filtering
+**Decision:** Provide administrative licence search with combinable filters and paginated results.
+
+- Search by Licence ID, Business ID or business name, registered consuming product, and licence status.
+- Support filtering by creation date and expiry date.
+- Allow multiple filters to be combined in one query.
+- Search results must be scoped to the administrator's authorized access; do not expose records across unauthorized business or product boundaries.
+- Use pagination for result sets; exact sorting options, page limits, search matching behavior, and API/UI contracts are Level 5 design details.
+- Internal notes and custom metadata are not included in ordinary search results unless an authorized administrative view explicitly requests them.
+
 ## Pending decisions
 | ID | Topic | Status |
 |---|---|---|
