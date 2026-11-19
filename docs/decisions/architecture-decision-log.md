@@ -243,6 +243,16 @@ Journal schema, transaction boundaries, concurrency, retry schedules, and API co
 - A signed snapshot does not extend the underlying licence validity and cannot authorize server-side operations.
 - Exact payload format, signature algorithm, key distribution, and revocation strategy are Level 5 security/API design details.
 
+### ADL-021 — Offline snapshot renewal
+**Decision:** When a consuming application reconnects to Easy License and completes successful online validation, it may request a fresh signed licence snapshot. The newly issued snapshot reflects the latest authoritative licence, device, and entitlement state.
+
+- Online validation is performed before issuing the refreshed snapshot.
+- The refreshed snapshot supersedes the prior snapshot for subsequent offline use.
+- If online validation fails, Easy License must not issue a snapshot that represents the licence as currently valid.
+- The consuming application remains responsible for securely replacing its locally stored snapshot and applying its own application behavior.
+- Snapshot renewal does not extend the underlying licence validity.
+- Exact renewal endpoint, response behavior, snapshot versioning, overlap/replay handling, and failure semantics are Level 5 API/security design details.
+
 ## Pending decisions
 | ID | Topic | Status |
 |---|---|---|
