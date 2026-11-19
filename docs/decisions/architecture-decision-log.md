@@ -272,6 +272,16 @@ Journal schema, transaction boundaries, concurrency, retry schedules, and API co
 - This restriction does not prevent a business from holding multiple licences or licences for multiple registered consuming products.
 - Any future transfer capability requires a separate explicit decision and an authorized, auditable workflow.
 
+### ADL-024 — Licence deletion and archival
+**Decision:** Licence records must not be physically deleted through normal application or administrative operations. Historical licences may be archived while preserving their identity and audit history.
+
+- Preserve the permanent Licence ID and the licence's lifecycle/status history.
+- Archival must not change the historical facts or make a licence valid again.
+- Archived licences remain unavailable for normal active-licence operations but may be retrieved through authorized historical/audit access.
+- Any legal requirement to erase or anonymize associated personal data must be handled separately without silently deleting or rewriting the licence's historical identity and lifecycle facts; exact handling is subject to retention policy and legal review.
+- Physical purge exceptions, if legally required, require a separately authorized and audited retention process.
+- Exact archival fields, retrieval permissions, and retention/purge implementation are Level 5 design details.
+
 ## Pending decisions
 | ID | Topic | Status |
 |---|---|---|
