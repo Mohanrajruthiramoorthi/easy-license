@@ -81,14 +81,16 @@ Journal schema, transaction boundaries, concurrency, retry schedules, and API co
 - The lease must be signed by Easy License and verified by the consuming product using a trusted verification key.
 - Offline validation is limited to the signed licence/entitlement snapshot and its stated validity; it cannot authorize server-side operations.
 - The lease must not be treated as an extension of the underlying subscription or licence validity.
-- Grace-period duration, maximum configurable ceiling, clock rollback/tamper handling, renewal behavior, and revocation delay remain open design decisions.
+- Grace period: 7 additional days after the 72-hour lease expires. The configured grace duration may be reduced or extended by policy, but must not exceed a hard maximum ceiling of 30 days. The exact per-product/per-plan configuration model is a Level 5 detail.
+- During grace, the consuming product may continue limited offline access under its configured offline policy; it must reconnect to Easy License to obtain a renewed lease. Grace does not extend the underlying subscription or licence validity.
+- Clock rollback/tamper handling, renewal protocol, precise restrictions on grace-mode capabilities, and revocation delay remain Level 5 design details.
 - Offline access has an inherent revocation delay while the client is disconnected; this limitation must be explicit to consuming products.
 
 ## Pending decisions
 | ID | Topic | Status |
 |---|---|---|
 | ADL-002 details | Ordinary OVERRIDE source precedence and tie-breakers | Pending Level 5 design |
-| ADL-003 details | Grace duration/ceiling, clock rollback, renewal and revocation behavior | Pending |
+| ADL-003 details | Clock rollback, renewal protocol, grace-mode capability restrictions and revocation behavior | Pending Level 5 design |
 | ADL-004 | Device inactivity/capacity | Pending |
 | ADL-005 | MFA/SMS recovery | Pending |
 | ADL-006 | Privacy/legal retention detail | Pending |
