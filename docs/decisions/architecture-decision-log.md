@@ -67,7 +67,7 @@ Journal schema, transaction boundaries, concurrency, retry schedules, and API co
 - Apply changes through the durable cross-module operation workflow with idempotency and audit history.
 - Do not automatically reactivate a revoked licence. If policy and the owning module permit access restoration, issue a new licence or use an explicitly defined reinstatement workflow; the exact rule remains to be designed.
 
-**Still open:** precedence when product-level and plan-level full-refund policies conflict; behavior when no full-refund policy is configured; disputes and chargebacks. These must not be inferred from the approved rules.
+**Disputes and chargebacks:**\n- When a payment dispute is opened, apply a configurable policy; the recommended default is temporary suspension of the associated licence while the dispute is unresolved.\n- If the dispute is won, restore eligible access only after the outcome/payment state is confirmed, using a controlled reinstatement workflow. Do not automatically reactivate a revoked licence.\n- If the dispute is lost or a chargeback is confirmed, apply the configured revocation policy.\n- Record dispute/chargeback outcomes as separate immutable financial events and coordinate subscription/licence/entitlement changes through the durable operation workflow.\n\n**Still open:** precedence when product-level and plan-level full-refund policies conflict; behavior when no full-refund policy is configured; exact policy precedence/defaults for disputes and chargebacks. These must not be inferred from the approved rules.
 
 ## Pending decisions
 | ID | Topic | Status |
@@ -77,7 +77,7 @@ Journal schema, transaction boundaries, concurrency, retry schedules, and API co
 | ADL-004 | Device inactivity/capacity | Pending |
 | ADL-005 | MFA/SMS recovery | Pending |
 | ADL-006 | Privacy/legal retention detail | Pending |
-| ADL-008 details | Full-refund policy precedence/default, disputes and chargebacks | Pending |
+| ADL-008 details | Full-refund policy precedence/default and dispute/chargeback policy precedence/default | Pending |
 | ADL-010 | Business ownership recovery | Pending |
 
 Pending decisions must not silently become policy.
