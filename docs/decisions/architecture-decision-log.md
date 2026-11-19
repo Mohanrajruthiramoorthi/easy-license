@@ -232,6 +232,17 @@ Journal schema, transaction boundaries, concurrency, retry schedules, and API co
 - Validation requests must be authenticated and authorized; responses must not disclose another business's or product's records.
 - Exact request/response schema, reason-code catalogue, caching, availability behavior, and API versioning are Level 5 design details.
 
+### ADL-020 — Signed offline licence snapshots
+**Decision:** Support digitally signed licence snapshots that consuming applications can verify locally when offline. Online validation remains authoritative.
+
+- Easy License issues the signed snapshot after successful online validation/authorization.
+- The snapshot contains the licence and entitlement facts needed by the consuming application for local verification.
+- The consuming application verifies the signature using a trusted verification key and applies its own application-specific behavior.
+- Offline verification does not provide immediate revocation detection; a disconnected client may continue to rely on a previously issued snapshot until its accepted validity ends.
+- Snapshot validity and offline behavior are configurable; exact default duration, maximum duration, renewal behavior, clock-tamper handling, key rotation, and grace behavior require a separate explicit policy/Level 5 design.
+- A signed snapshot does not extend the underlying licence validity and cannot authorize server-side operations.
+- Exact payload format, signature algorithm, key distribution, and revocation strategy are Level 5 security/API design details.
+
 ## Pending decisions
 | ID | Topic | Status |
 |---|---|---|
