@@ -190,6 +190,17 @@ Journal schema, transaction boundaries, concurrency, retry schedules, and API co
 - Scheduled jobs may update stored lifecycle status and perform housekeeping, but they are not the authority for deciding whether a licence is currently valid.
 - Exact timestamp semantics, timezone representation, boundary inclusivity, and extension constraints are Level 5 design details.
 
+### ADL-016 — Licence lifecycle statuses
+**Decision:** Use the basic licence statuses PENDING, ACTIVE, SUSPENDED, EXPIRED, and REVOKED.
+
+- **PENDING:** Licence record has been created but is not yet active.
+- **ACTIVE:** Licence is active and may be valid subject to its validity period and other validation checks.
+- **SUSPENDED:** Licence is temporarily disabled; an authorized operation may reinstate it if it remains eligible.
+- **EXPIRED:** Licence validity has ended. Expiry is determined by the validity timestamps, not by whether a scheduled job has updated the stored status.
+- **REVOKED:** Licence is permanently disabled and cannot be reactivated. Any future grant requires a new licence record.
+- Lifecycle transitions must be performed through authorized licence-management operations and recorded in audit history.
+- Exact transition matrix, eligibility checks, and API representation are Level 5 design details.
+
 ## Pending decisions
 | ID | Topic | Status |
 |---|---|---|
