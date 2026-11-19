@@ -60,7 +60,14 @@ Journal schema, transaction boundaries, concurrency, retry schedules, and API co
 - Preserve the original payment and record each partial refund as a separate financial event.
 - The amount refunded must not be used as an implicit or automatic percentage-based entitlement reduction.
 
-**Still open:** precedence when product-level and plan-level full-refund policies conflict; behavior when no full-refund policy is configured; refund reversal; disputes and chargebacks. These must not be inferred from the approved rules.
+**Refund reversals/corrections:**
+- A reversal or correction is recorded as a new financial event; do not delete or overwrite the original refund event.
+- Restore or reinstate affected subscription/licence access only after the relevant payment state is confirmed.
+- Recalculate affected entitlements through the Entitlement Engine.
+- Apply changes through the durable cross-module operation workflow with idempotency and audit history.
+- Do not automatically reactivate a revoked licence. If policy and the owning module permit access restoration, issue a new licence or use an explicitly defined reinstatement workflow; the exact rule remains to be designed.
+
+**Still open:** precedence when product-level and plan-level full-refund policies conflict; behavior when no full-refund policy is configured; disputes and chargebacks. These must not be inferred from the approved rules.
 
 ## Pending decisions
 | ID | Topic | Status |
@@ -70,7 +77,7 @@ Journal schema, transaction boundaries, concurrency, retry schedules, and API co
 | ADL-004 | Device inactivity/capacity | Pending |
 | ADL-005 | MFA/SMS recovery | Pending |
 | ADL-006 | Privacy/legal retention detail | Pending |
-| ADL-008 details | Full-refund policy precedence/default, refund reversals, disputes and chargebacks | Pending |
+| ADL-008 details | Full-refund policy precedence/default, disputes and chargebacks | Pending |
 | ADL-010 | Business ownership recovery | Pending |
 
 Pending decisions must not silently become policy.
