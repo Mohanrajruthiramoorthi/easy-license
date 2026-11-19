@@ -124,6 +124,18 @@ Journal schema, transaction boundaries, concurrency, retry schedules, and API co
 - Define retention periods, deletion/anonymization procedures, legal-hold handling, and exceptions through a documented data-category schedule after jurisdiction-specific legal review.
 - Exact durations and implementation details remain pending; this decision does not authorize indefinite retention by default.
 
+### ADL-010 — Business ownership recovery
+**Decision:** Business ownership recovery requires verification of the requester's identity and evidence that the requester is authorized to control the business. Do not transfer ownership solely on the basis of a request or access to a single contact channel.
+
+- Verify the requester's identity using an established, documented process.
+- Assess evidence of authority over the business; the evidence standard must be appropriate to the business type and risk.
+- Route high-risk, conflicting, or disputed claims to manual review.
+- Preserve the existing ownership assignment until the recovery request is approved.
+- Record the request, evidence references, verification steps, decision, approving actor, timestamps, and resulting ownership change in the audit history.
+- Notify relevant parties of the request and outcome where appropriate, without disclosing sensitive evidence.
+- Do not bypass existing security controls or use recovery as an informal ownership-transfer mechanism.
+- Exact evidence requirements, review/appeal process, notification rules, and exceptional-case handling remain policy and Level 5 design details.
+
 ## Pending decisions
 | ID | Topic | Status |
 |---|---|---|
@@ -133,6 +145,6 @@ Journal schema, transaction boundaries, concurrency, retry schedules, and API co
 | ADL-005 details | Step-up rules, recovery verification, lockout/rate limits and break-glass procedure | Pending Level 5 design |
 | ADL-006 details | Per-category durations, deletion/anonymization schedule, legal holds and jurisdictional review | Pending Level 5/policy detail |
 | ADL-008 details | Full-refund policy precedence/default and dispute/chargeback policy precedence/default | Pending |
-| ADL-010 | Business ownership recovery | Pending |
+| ADL-010 details | Evidence standards, review/appeal process, notifications and exceptional-case handling | Pending policy/Level 5 detail |
 
 Pending decisions must not silently become policy.
