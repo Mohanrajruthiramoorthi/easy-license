@@ -282,6 +282,17 @@ Journal schema, transaction boundaries, concurrency, retry schedules, and API co
 - Physical purge exceptions, if legally required, require a separately authorized and audited retention process.
 - Exact archival fields, retrieval permissions, and retention/purge implementation are Level 5 design details.
 
+### ADL-025 — Licence extension history
+**Decision:** Every licence validity extension must create an immutable history entry. The Licence ID remains unchanged.
+
+- Record the previous expiry timestamp and the new expiry timestamp.
+- Record the reason for the extension.
+- Record the actor who performed it, identifying whether the action came from an administrator or an authorized consuming-application API caller.
+- Record the timestamp when the extension was performed.
+- Preserve prior extension entries; do not overwrite or delete earlier history.
+- Apply extensions only through authorized licence-management operations and validate that the licence is eligible for extension.
+- Exact history schema, authorization scopes, and extension eligibility rules are Level 5 design details.
+
 ## Pending decisions
 | ID | Topic | Status |
 |---|---|---|
