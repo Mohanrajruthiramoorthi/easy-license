@@ -86,12 +86,20 @@ Journal schema, transaction boundaries, concurrency, retry schedules, and API co
 - Clock rollback/tamper handling, renewal protocol, precise restrictions on grace-mode capabilities, and revocation delay remain Level 5 design details.
 - Offline access has an inherent revocation delay while the client is disconnected; this limitation must be explicit to consuming products.
 
+### ADL-004 — Device inactivity
+**Decision:** A device is automatically marked inactive after 90 consecutive days without successful contact with Easy License.
+
+- Inactivity does not delete the device record or its history.
+- The inactivity process must preserve audit history and must not silently revoke or erase the device.
+- The inactivity threshold is a policy default; any configurable variation requires an explicit product/platform policy.
+- Exact reactivation requirements, treatment of active offline leases, and interaction with device-capacity enforcement remain Level 5 design details.
+
 ## Pending decisions
 | ID | Topic | Status |
 |---|---|---|
 | ADL-002 details | Ordinary OVERRIDE source precedence and tie-breakers | Pending Level 5 design |
 | ADL-003 details | Clock rollback, renewal protocol, grace-mode capability restrictions and revocation behavior | Pending Level 5 design |
-| ADL-004 | Device inactivity/capacity | Pending |
+| ADL-004 details | Reactivation, offline lease interaction and capacity enforcement | Pending Level 5 design |
 | ADL-005 | MFA/SMS recovery | Pending |
 | ADL-006 | Privacy/legal retention detail | Pending |
 | ADL-008 details | Full-refund policy precedence/default and dispute/chargeback policy precedence/default | Pending |
