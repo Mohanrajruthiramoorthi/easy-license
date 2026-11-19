@@ -46,16 +46,21 @@ Journal schema, transaction boundaries, concurrency, retry schedules, and API co
 - The new licence may reference the prior subscription/licence lineage for audit and customer history.
 - This decision applies to a new purchase after expiry; it does not define reinstatement during an active grace period or correction of an erroneous expiry. Those cases require their own rules.
 
-### ADL-008 — Full refund access policy
-**Decision:** Make the access consequence of a full refund configurable by consuming product or plan policy. Do not impose one universal revoke/suspend behavior across all products.
-
+### ADL-008 — Refund access policy
+**Full refunds:** Make the access consequence configurable by consuming product or plan policy. Do not impose one universal revoke/suspend behavior across all products.
 - A full refund is recorded as a separate financial event; the original successful payment record remains intact.
 - The configured policy determines whether the associated licence is immediately revoked or suspended.
-- Subscription status and entitlement recalculation must follow the configured policy through the owning modules.
-- Record the refund amount, reason, actor where applicable, and timestamps.
-- Refund processing must use the durable cross-module operation workflow and idempotency controls.
+- Subscription status and entitlement recalculation follow the configured policy through the owning modules.
+- Record refund amount, reason, actor where applicable, and timestamps.
+- Refund processing uses the durable cross-module operation workflow and idempotency controls.
 
-**Not yet decided:** policy precedence when product-level and plan-level settings conflict; behavior when no refund access policy is configured; partial refunds; refund reversal; disputes and chargebacks. These remain explicit design decisions and must not be inferred from this approval.
+**Partial refunds:**
+- A partial refund does not, by itself, suspend or revoke the associated licence; access remains active by default.
+- If the partial refund explicitly removes a purchased add-on or entitlement, update that specific grant and recalculate entitlements through the Entitlement Engine.
+- Preserve the original payment and record each partial refund as a separate financial event.
+- The amount refunded must not be used as an implicit or automatic percentage-based entitlement reduction.
+
+**Still open:** precedence when product-level and plan-level full-refund policies conflict; behavior when no full-refund policy is configured; refund reversal; disputes and chargebacks. These must not be inferred from the approved rules.
 
 ## Pending decisions
 | ID | Topic | Status |
@@ -65,7 +70,7 @@ Journal schema, transaction boundaries, concurrency, retry schedules, and API co
 | ADL-004 | Device inactivity/capacity | Pending |
 | ADL-005 | MFA/SMS recovery | Pending |
 | ADL-006 | Privacy/legal retention detail | Pending |
-| ADL-008 details | Policy precedence/default, partial refunds, reversals, disputes and chargebacks | Pending |
+| ADL-008 details | Full-refund policy precedence/default, refund reversals, disputes and chargebacks | Pending |
 | ADL-010 | Business ownership recovery | Pending |
 
 Pending decisions must not silently become policy.
