@@ -180,6 +180,16 @@ Journal schema, transaction boundaries, concurrency, retry schedules, and API co
 - Licence validation must check the exact business and product association supplied by the authenticated caller.
 - Exact API fields and transfer policy are Level 5 design details.
 
+### ADL-015 — Licence validity and expiry
+**Decision:** Support time-bounded licences with explicit start and expiry timestamps, lifetime licences without an expiry timestamp, and authorized manual validity extensions.
+
+- A time-bounded licence has a start timestamp and an expiry timestamp.
+- A lifetime licence has no expiry timestamp and is not automatically expired by time.
+- An authorized administrator may extend a licence's expiry with a recorded reason and audit history.
+- Licence validity is evaluated at authorization/validation time; expiry must take effect based on the timestamp even if a scheduled expiry job has not run.
+- Scheduled jobs may update stored lifecycle status and perform housekeeping, but they are not the authority for deciding whether a licence is currently valid.
+- Exact timestamp semantics, timezone representation, boundary inclusivity, and extension constraints are Level 5 design details.
+
 ## Pending decisions
 | ID | Topic | Status |
 |---|---|---|
