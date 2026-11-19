@@ -169,6 +169,17 @@ Journal schema, transaction boundaries, concurrency, retry schedules, and API co
 - Licence creation does not require Easy License to process or verify payment; any payment information is reference data only.
 - Exact API contract, authorization scopes, required fields, and approval controls are Level 5 design details.
 
+### ADL-014 — Licence ownership and product association
+**Decision:** Every licence belongs to exactly one business and is associated with exactly one registered consuming product.
+
+- A business may hold multiple licences.
+- A business may hold licences for different registered consuming products.
+- A licence cannot be shared across businesses or consuming products.
+- The business and product association are established at licence creation and remain part of the licence's identity/history.
+- Any transfer or reassignment must not be an implicit update; transfer rules, if required, need a separately authorized and audited workflow.
+- Licence validation must check the exact business and product association supplied by the authenticated caller.
+- Exact API fields and transfer policy are Level 5 design details.
+
 ## Pending decisions
 | ID | Topic | Status |
 |---|---|---|
