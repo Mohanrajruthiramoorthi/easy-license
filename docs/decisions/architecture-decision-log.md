@@ -349,6 +349,19 @@ Journal schema, transaction boundaries, concurrency, retry schedules, and API co
 - Membership and ownership changes must be authorized and recorded in audit history.
 - Exact roles beyond the owner, membership invitation/verification, ownership succession, and authorization details remain Level 5 design items.
 
+
+### ADL-031 — Built-in and custom business roles
+**Decision:** Provide the built-in roles OWNER and MEMBER, while allowing each business to define custom roles and assign them to its users.
+
+- OWNER is the designated business owner role and retains ownership-level authority.
+- MEMBER is the standard built-in role for users without elevated custom permissions.
+- A business may create custom roles with a business-defined name and a configurable set of permissions supported by Easy License.
+- Business users may be assigned an applicable built-in or custom role within that business.
+- Custom roles and their assignments are scoped to the business that defines them; they do not grant access to another business.
+- Custom roles cannot override platform security boundaries or grant permissions that the assigning actor is not authorized to delegate.
+- Role creation, modification, deletion, and assignment changes must be authorized and audited.
+- Exact permission catalogue, role inheritance (if any), role deletion/reassignment behavior, and owner succession remain Level 5 design details.
+
 ## Pending decisions
 | ID | Topic | Status |
 |---|---|---|
