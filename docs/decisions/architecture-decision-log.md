@@ -253,6 +253,16 @@ Journal schema, transaction boundaries, concurrency, retry schedules, and API co
 - Snapshot renewal does not extend the underlying licence validity.
 - Exact renewal endpoint, response behavior, snapshot versioning, overlap/replay handling, and failure semantics are Level 5 API/security design details.
 
+### ADL-022 — Permanent licence identifier
+**Decision:** Every licence receives a permanent, globally unique, non-sequential and non-predictable Licence ID.
+
+- The Licence ID is assigned when the licence record is created.
+- The identifier never changes during the licence lifecycle, including extension, suspension, reinstatement, expiry, or revocation.
+- A Licence ID is never reused, including after deletion or archival of a record.
+- Consuming applications use the Licence ID to identify the specific licence in validation and related API operations, together with the authenticated business and product context.
+- The identifier must not expose internal database sequence values or sensitive business information.
+- Exact identifier format, generation mechanism, and API representation are Level 5 design details.
+
 ## Pending decisions
 | ID | Topic | Status |
 |---|---|---|
