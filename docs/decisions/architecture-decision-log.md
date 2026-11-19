@@ -86,17 +86,6 @@ Journal schema, transaction boundaries, concurrency, retry schedules, and API co
 - Clock rollback/tamper handling, renewal protocol, precise restrictions on grace-mode capabilities, and revocation delay remain Level 5 design details.
 - Offline access has an inherent revocation delay while the client is disconnected; this limitation must be explicit to consuming products.
 
-### ADL-004 — Device inactivity
-**Decision:** A device is automatically marked inactive after 90 consecutive days without successful contact with Easy License.
-
-- Inactivity does not delete the device record or its history.
-- The inactivity process must preserve audit history and must not silently revoke or erase the device.
-- The inactivity threshold is a policy default; any configurable variation requires an explicit product/platform policy.
-- Reactivation requires the device to authenticate with Easy License again and complete device verification before returning to ACTIVE.
-- An inactive device must not regain access solely because its local offline lease is still present; server-side reactivation and authorization checks are required.
-- Reactivation remains subject to current account, business membership, licence, entitlement, and device-capacity checks.
-- Exact verification protocol and treatment of active offline leases remain Level 5 design details.
-
 ### ADL-004 — Device inactivity and capacity
 **Inactivity and reactivation:**
 - A device is automatically marked inactive after 90 consecutive days without successful contact with Easy License.
@@ -112,13 +101,24 @@ Journal schema, transaction boundaries, concurrency, retry schedules, and API co
 - Preserve the replaced device's history and audit the replacement action.
 - Exact replacement authorization, offline-device handling, and verification protocol remain Level 5 design details.
 
+### ADL-005 — Administrative MFA and recovery
+**Decision:** Use TOTP from an authenticator application as the primary MFA method for administrators, with one-time recovery codes as the backup mechanism. SMS may be offered only as a weaker fallback and is not equivalent to TOTP for privileged actions.
+
+- Administrative accounts must have MFA enabled.
+- Recovery codes are one-time use and must be stored server-side only as secure hashes.
+- A used recovery code cannot be reused; generating a new set invalidates the previous set.
+- SMS fallback must not silently satisfy stronger MFA requirements for sensitive or high-risk administrative actions.
+- MFA reset and account recovery require a controlled, auditable verification process.
+- Record enrollment, challenge, recovery, reset, and factor replacement security events without logging secrets or OTP values.
+- Exact step-up authentication rules, recovery evidence, lockout/rate limits, and emergency break-glass procedures remain Level 5 design details.
+
 ## Pending decisions
 | ID | Topic | Status |
 |---|---|---|
 | ADL-002 details | Ordinary OVERRIDE source precedence and tie-breakers | Pending Level 5 design |
 | ADL-003 details | Clock rollback, renewal protocol, grace-mode capability restrictions and revocation behavior | Pending Level 5 design |
 | ADL-004 details | Replacement authorization, offline-device handling and verification protocol | Pending Level 5 design |
-| ADL-005 | MFA/SMS recovery | Pending |
+| ADL-005 details | Step-up rules, recovery verification, lockout/rate limits and break-glass procedure | Pending Level 5 design |
 | ADL-006 | Privacy/legal retention detail | Pending |
 | ADL-008 details | Full-refund policy precedence/default and dispute/chargeback policy precedence/default | Pending |
 | ADL-010 | Business ownership recovery | Pending |
