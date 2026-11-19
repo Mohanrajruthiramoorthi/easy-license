@@ -293,6 +293,17 @@ Journal schema, transaction boundaries, concurrency, retry schedules, and API co
 - Apply extensions only through authorized licence-management operations and validate that the licence is eligible for extension.
 - Exact history schema, authorization scopes, and extension eligibility rules are Level 5 design details.
 
+### ADL-026 — Licence suspension and reinstatement history
+**Decision:** Every licence suspension and reinstatement must be recorded as an immutable lifecycle history entry.
+
+- Record the transition (suspension or reinstatement), previous status, and resulting status.
+- Record the actor performing the operation, identifying whether it was an administrator or an authorized consuming-application API caller.
+- Record the reason and operation timestamp.
+- Preserve all prior entries; do not overwrite or delete lifecycle history.
+- Suspension and reinstatement must occur only through authorized licence-management operations.
+- Reinstatement is permitted only when the licence remains eligible and has not been revoked or otherwise become terminal.
+- Exact transition eligibility, history schema, and authorization scopes are Level 5 design details.
+
 ## Pending decisions
 | ID | Topic | Status |
 |---|---|---|
