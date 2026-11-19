@@ -13,8 +13,8 @@
 | Identity & Authentication | Accounts, credentials, login, sessions |
 | Business & Membership | Businesses, ownership, membership lifecycle |
 | Basic Access Metadata (optional) | Only generic access metadata explicitly required by the integration contract; application permissions remain in the consuming application |
-| Subscription Management | Plans, subscription lifecycle, renewals, cancellation |
-| Payment Records (optional/deferred) | Store payment references or status facts only if required; payment execution and complex financial workflows are not part of the initial minimum scope |
+| Subscription/Licence Records | Store subscription references and validity information needed to manage licence records; no payment-driven automation |
+| Payment Information Records | Store externally supplied payment details for reference/audit only; no collection, processing, verification, settlement, refund, dispute, chargeback, or gateway integration |
 | Licence Engine | Licence issuance, validity, suspension, expiry, revocation |
 | Entitlement Registry | Store application-scoped entitlement codes, types/metadata, and values; no application-specific feature semantics or enforcement |
 | Device Management | Registration, binding, capacity, replacement and revocation |
@@ -26,9 +26,9 @@
 | Lifecycle Jobs | Minimal scheduled expiry and cleanup/reconciliation tasks required by the licence registry |
 
 ## Critical domain boundaries
-Payment success does not directly activate a licence. Payment Management records the confirmed result; Subscription Management applies commercial state; Licence Engine issues/updates the licence; Entitlement Engine resolves access.
+Payment information is stored as externally supplied reference data only. Easy License does not verify payment or infer that funds were received. A payment record never automatically activates or changes a licence; licence lifecycle changes are explicit operations.
 
-Refunds, disputes, chargebacks, and settlement are separate financial facts. Do not overwrite the original successful payment.
+Payment gateway processing, settlement, refunds, disputes, and chargebacks are outside the current scope. Do not store payment authentication secrets such as card security codes, UPI PINs, or banking credentials.
 
 Licence management owns the basic licence lifecycle. Easy License stores application-defined entitlement identifiers and values but does not own their feature semantics, application roles, business workflows, or enforcement. The consuming application interprets and enforces its own configuration.
 
