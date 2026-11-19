@@ -67,13 +67,28 @@ Journal schema, transaction boundaries, concurrency, retry schedules, and API co
 - Apply changes through the durable cross-module operation workflow with idempotency and audit history.
 - Do not automatically reactivate a revoked licence. If policy and the owning module permit access restoration, issue a new licence or use an explicitly defined reinstatement workflow; the exact rule remains to be designed.
 
-**Disputes and chargebacks:**\n- When a payment dispute is opened, apply a configurable policy; the recommended default is temporary suspension of the associated licence while the dispute is unresolved.\n- If the dispute is won, restore eligible access only after the outcome/payment state is confirmed, using a controlled reinstatement workflow. Do not automatically reactivate a revoked licence.\n- If the dispute is lost or a chargeback is confirmed, apply the configured revocation policy.\n- Record dispute/chargeback outcomes as separate immutable financial events and coordinate subscription/licence/entitlement changes through the durable operation workflow.\n\n**Still open:** precedence when product-level and plan-level full-refund policies conflict; behavior when no full-refund policy is configured; exact policy precedence/defaults for disputes and chargebacks. These must not be inferred from the approved rules.
+**Disputes and chargebacks:**
+- When a payment dispute is opened, apply a configurable policy; the recommended default is temporary suspension of the associated licence while the dispute is unresolved.
+- If the dispute is won, restore eligible access only after the outcome/payment state is confirmed, using a controlled reinstatement workflow. Do not automatically reactivate a revoked licence.
+- If the dispute is lost or a chargeback is confirmed, apply the configured revocation policy.
+- Record dispute/chargeback outcomes as separate immutable financial events and coordinate subscription/licence/entitlement changes through the durable operation workflow.
+
+**Still open:** precedence when product-level and plan-level full-refund policies conflict; behavior when no full-refund policy is configured; exact policy precedence/defaults for disputes and chargebacks. These must not be inferred from the approved rules.
+
+### ADL-003 — Offline licence lease
+**Decision:** Use a cryptographically signed offline licence lease with a 72-hour validity period. The consuming product can validate the signed lease locally during this period without contacting Easy License.
+
+- The lease must be signed by Easy License and verified by the consuming product using a trusted verification key.
+- Offline validation is limited to the signed licence/entitlement snapshot and its stated validity; it cannot authorize server-side operations.
+- The lease must not be treated as an extension of the underlying subscription or licence validity.
+- Grace-period duration, maximum configurable ceiling, clock rollback/tamper handling, renewal behavior, and revocation delay remain open design decisions.
+- Offline access has an inherent revocation delay while the client is disconnected; this limitation must be explicit to consuming products.
 
 ## Pending decisions
 | ID | Topic | Status |
 |---|---|---|
 | ADL-002 details | Ordinary OVERRIDE source precedence and tie-breakers | Pending Level 5 design |
-| ADL-003 | Offline lease/grace defaults | Pending |
+| ADL-003 details | Grace duration/ceiling, clock rollback, renewal and revocation behavior | Pending |
 | ADL-004 | Device inactivity/capacity | Pending |
 | ADL-005 | MFA/SMS recovery | Pending |
 | ADL-006 | Privacy/legal retention detail | Pending |
