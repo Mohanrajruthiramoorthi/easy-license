@@ -337,6 +337,18 @@ Journal schema, transaction boundaries, concurrency, retry schedules, and API co
 - Record administrative changes and activation/deactivation actions in audit history.
 - Exact business/product fields, deactivation consequences, reactivation controls, and API/UI contracts are Level 5 design details.
 
+
+### ADL-030 — Business accounts and user membership
+**Decision:** A business has one designated owner and may have multiple users as members. Each user authenticates independently, and access to business records is restricted by business membership.
+
+- Each business has exactly one designated owner at a time.
+- A business may have multiple associated users, each with an individual user identity and authentication.
+- The owner may add users to the business and deactivate their membership.
+- Users may access business records only when they have an active membership and the required authorization.
+- Deactivating a user's membership removes their access to that business; it does not delete the user's identity or the business's historical records.
+- Membership and ownership changes must be authorized and recorded in audit history.
+- Exact roles beyond the owner, membership invitation/verification, ownership succession, and authorization details remain Level 5 design items.
+
 ## Pending decisions
 | ID | Topic | Status |
 |---|---|---|
