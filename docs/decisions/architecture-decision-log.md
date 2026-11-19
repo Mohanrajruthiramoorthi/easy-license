@@ -211,6 +211,17 @@ Journal schema, transaction boundaries, concurrency, retry schedules, and API co
 - Whether entitlements from multiple licences are combined, selected, or treated independently is not decided here; the consuming application must not assume automatic aggregation. Any platform-level aggregation behavior requires a separate explicit decision.
 - Exact API selection and validation fields are Level 5 design details.
 
+### ADL-018 — Device registration and licence-scoped capacity
+**Decision:** Easy License stores device registrations and enforces the configured device limit for each licence. Device limits are represented as generic entitlement values.
+
+- Device registrations are associated with a specific licence; capacity is evaluated independently for that licence.
+- The same physical device may be registered against more than one licence, subject to each licence's configured device limit and registration checks.
+- Device registration and activation must be authenticated, authorized, and audited.
+- Device identity must not rely solely on a client-supplied identifier; the device-binding and verification protocol is a Level 5 security design item.
+- Inactive, replaced, suspended, or revoked device handling follows the approved device lifecycle rules; exact counting semantics for each state remain a Level 5 detail.
+- The consuming application may interpret other device-related entitlement metadata, but Easy License enforces the generic maximum-device constraint.
+- Exact registration fields, device identity protocol, and capacity-counting rules are Level 5 design details.
+
 ## Pending decisions
 | ID | Topic | Status |
 |---|---|---|
