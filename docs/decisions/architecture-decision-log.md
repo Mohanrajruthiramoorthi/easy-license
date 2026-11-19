@@ -137,6 +137,17 @@ Journal schema, transaction boundaries, concurrency, retry schedules, and API co
 - Do not bypass existing security controls or use recovery as an informal ownership-transfer mechanism.
 - Exact evidence requirements, review/appeal process, notification rules, and exceptional-case handling remain policy and Level 5 design details.
 
+### ADL-011 — Application-owned entitlement definitions
+**Decision:** Consuming applications define and own their entitlement codes, data types, meanings, and enforcement behavior. Easy License stores and serves generic entitlement identifiers and values without owning application-specific feature semantics.
+
+- A consuming application may register entitlement definitions or metadata with Easy License for validation and administration.
+- Easy License treats entitlement codes and values as application-scoped data; it does not implement the corresponding features or decide their product-specific behavior.
+- Easy License may perform basic generic checks, such as licence validity, entitlement presence, value retrieval, and configured device-capacity enforcement.
+- The consuming application remains responsible for interpreting entitlement values and enforcing feature behavior, application roles, workflows, and application-specific offline rules.
+- Entitlement identifiers must be namespaced or scoped to the registered consuming application to prevent collisions.
+- A consuming application remains authoritative for its feature catalogue and may change its definitions without requiring Easy License to understand those features.
+- Exact registration schema, type system, validation contract, and versioning are Level 5 API design details.
+
 ## Pending decisions
 | ID | Topic | Status |
 |---|---|---|
