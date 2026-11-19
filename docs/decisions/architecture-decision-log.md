@@ -263,6 +263,15 @@ Journal schema, transaction boundaries, concurrency, retry schedules, and API co
 - The identifier must not expose internal database sequence values or sensitive business information.
 - Exact identifier format, generation mechanism, and API representation are Level 5 design details.
 
+### ADL-023 — Licence transfer policy
+**Decision:** Licence transfers between businesses are not supported in the initial scope.
+
+- A licence remains associated with the business recorded at creation.
+- A business that needs a licence under a different business identity must obtain a new licence for that business.
+- The original licence and its lifecycle/audit history remain preserved; no ownership reassignment is performed.
+- This restriction does not prevent a business from holding multiple licences or licences for multiple registered consuming products.
+- Any future transfer capability requires a separate explicit decision and an authorized, auditable workflow.
+
 ## Pending decisions
 | ID | Topic | Status |
 |---|---|---|
