@@ -222,6 +222,16 @@ Journal schema, transaction boundaries, concurrency, retry schedules, and API co
 - The consuming application may interpret other device-related entitlement metadata, but Easy License enforces the generic maximum-device constraint.
 - Exact registration fields, device identity protocol, and capacity-counting rules are Level 5 design details.
 
+### ADL-019 — Licence validation API response
+**Decision:** Consuming applications may validate a specific licence through the Easy License API. The response provides authoritative licence facts and a validation result; the consuming application decides how to apply those facts within its own workflows and feature behavior.
+
+- The request identifies the registered consuming product, business, specific licence, and device where applicable.
+- The response includes validation outcome and reason, licence status and validity, business/product association, device registration status where applicable, and the licence's entitlement codes and values.
+- Easy License evaluates its own licence, validity, business/product association, and device rules as part of validation.
+- The response is factual and does not implement or decide consuming-application feature behavior, application permissions, or business workflows.
+- Validation requests must be authenticated and authorized; responses must not disclose another business's or product's records.
+- Exact request/response schema, reason-code catalogue, caching, availability behavior, and API versioning are Level 5 design details.
+
 ## Pending decisions
 | ID | Topic | Status |
 |---|---|---|
