@@ -4,18 +4,18 @@ Easy License is a standalone, application-agnostic licensing platform. It manage
 
 ## Architecture
 
-- Modular monolith; no microservices.
-- Java 25 and Spring Boot backend.
-- PostgreSQL as the system of record.
+- Modular monolith implemented as a TypeScript HTTP API on Firebase Cloud Functions (2nd gen).
+- PostgreSQL 17 on Neon as the system of record.
+- Firebase Hosting is reserved for the planned Angular 21 administration portal.
 - Synchronous module-to-module calls through explicit service contracts.
-- Angular 21 administration portal (planned).
 - OpenAPI contract for external integrations.
-- Scheduled jobs for time-based lifecycle processing.
+- Scheduled lifecycle processing will use narrowly scoped scheduled functions when required.
 - No event broker in the initial architecture.
 
 ## Repository layout
 
-- `backend/` — Spring Boot backend.
+- `functions/` — TypeScript Firebase Functions API.
+- `functions/sql/` — reviewed PostgreSQL migrations.
 - `admin-portal/` — platform administration UI (planned).
 - `business-portal/` — business portal (planned).
 - `sdk/` — integration SDKs (planned).
@@ -23,31 +23,33 @@ Easy License is a standalone, application-agnostic licensing platform. It manage
 
 ## Deployment
 
-See the [zero-cost MVP deployment guide](docs/deployment/render.md). The root `render.yaml` defines one free Render API service connected to a Neon Free PostgreSQL database. This setup is for MVP/testing only and is not a production availability configuration.
+See [Firebase deployment guide](docs/deployment/firebase.md). The API is deployed to Firebase Cloud Functions in `asia-southeast1` and connects to Neon PostgreSQL using a Secret Manager secret.
+
+**Billing note:** Firebase Functions requires the Blaze plan and a linked Cloud Billing account. Free usage allowances apply, but overages can be billed. A budget alert is not a hard spending cap. This deployment is not a guaranteed $0 service.
 
 ## Local development
 
 Requirements:
-- JDK 25
-- Maven 3.9+
-- Docker Engine with Docker Compose
+- Node.js 22+
+- npm
+- Firebase CLI
+- A Neon PostgreSQL database or local PostgreSQL 17
 
-Start PostgreSQL:
-
-```bash
-docker compose up -d postgres
-docker compose ps
-```
-
-Run the backend:
+Install and run checks:
 
 ```bash
-cd backend
-mvn spring-boot:run
+cd functions
+npm install
+npm test
+npm run build
 ```
 
-Health endpoint: `http://localhost:8080/actuator/health`
+Run the Firebase Functions emulator from the repository root:
 
-OpenAPI UI: `http://localhost:8080/swagger-ui.html`
+```bash
+firebase emulators:start --only functions
+```
 
-The first foundation milestone intentionally does not introduce domain tables or business workflows. Those will be added module by module with migrations and tests.
+Set `DATABASE_URL` locally using the Firebase Functions emulator's supported local secret configuration. Never commit database credentials.
+
+The initial API foundation exposes liveness and database-readiness endpoints. Domain workflows will be added module by module with migrations and tests.
