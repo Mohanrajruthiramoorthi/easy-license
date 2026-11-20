@@ -2,6 +2,18 @@
 
 ## Approved
 
+### ADL-032 — TypeScript serverless backend and managed PostgreSQL
+**Decision:** Implement the backend as a TypeScript modular monolith using Firebase Cloud Functions (2nd gen) with Express for HTTP routing. Keep PostgreSQL 17 on Neon as the system of record.
+
+- Deploy the HTTPS API in `asia-southeast1`.
+- Use Firebase Secret Manager for the Neon pooled connection string.
+- Keep minimum instances at zero and cap the initial function at three instances.
+- Limit each warm instance's PostgreSQL pool to two connections.
+- Do not run database migrations during function cold starts; apply reviewed migrations as controlled deployment steps.
+- Firebase Functions deployment requires Blaze and a linked Cloud Billing account. Free quotas are not a hard spending cap; budget alerts do not stop charges.
+- No Firebase project, billing account, Neon project, secret, or deployment is provisioned by this decision.
+
+
 ### ADL-007 — Cross-module workflow coordination
 **Decision:** Synchronous orchestration + durable operation journal.
 - Each module commits its own transaction.
