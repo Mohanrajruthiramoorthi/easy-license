@@ -2,7 +2,7 @@
 
 ## Architectural style
 
-Easy License starts as a modular monolith. Each business capability owns its data and exposes operations through explicit service interfaces. Modules communicate through direct synchronous calls.
+Easy License starts as a modular monolith. The backend baseline is Java 25 with Spring Boot 4.1.3. Each business capability owns its data and exposes operations through explicit service interfaces. Modules communicate through direct synchronous calls.
 
 ## Initial module boundaries
 
