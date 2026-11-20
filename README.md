@@ -23,7 +23,7 @@ Easy License is a standalone, application-agnostic licensing platform. It manage
 
 ## Deployment
 
-See [Render deployment guide](docs/deployment/render.md). The root `render.yaml` defines isolated Singapore staging and production services and databases.
+See the [zero-cost MVP deployment guide](docs/deployment/render.md). The root `render.yaml` defines one free Render API service connected to a Neon Free PostgreSQL database. This setup is for MVP/testing only and is not a production availability configuration.
 
 ## Local development
 
