@@ -88,7 +88,7 @@ databases:
 
   - name: easy-license-production-db
     region: singapore
-    plan: 256mb
+    plan: 0.1c-256mb
     postgresMajorVersion: "17"
     databaseName: easy_license_production
     user: easy_license_production
