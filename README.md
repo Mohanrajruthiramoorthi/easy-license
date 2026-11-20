@@ -5,7 +5,7 @@ Easy License is a standalone, application-agnostic licensing platform. It manage
 ## Architecture
 
 - Modular monolith; no microservices.
-- Java 21 and Spring Boot backend.
+- Java 25 and Spring Boot backend.
 - PostgreSQL as the system of record.
 - Synchronous module-to-module calls through explicit service contracts.
 - Angular 21 administration portal (planned).
@@ -20,6 +20,10 @@ Easy License is a standalone, application-agnostic licensing platform. It manage
 - `business-portal/` — business portal (planned).
 - `sdk/` — integration SDKs (planned).
 - `docs/` — architecture decisions and workflow documentation.
+
+## Deployment
+
+See [Render deployment guide](docs/deployment/render.md). The root `render.yaml` defines isolated Singapore staging and production services and databases.
 
 ## Local development
 
