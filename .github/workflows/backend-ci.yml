@@ -52,3 +52,6 @@ jobs:
 
       - name: Verify with Maven
         run: mvn --batch-mode --no-transfer-progress -f backend/pom.xml clean verify
+
+      - name: Build production Docker image
+        run: docker build --file backend/Dockerfile --tag easy-license-backend:ci .
