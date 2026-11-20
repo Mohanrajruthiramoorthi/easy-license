@@ -24,7 +24,7 @@ Easy License is a standalone, application-agnostic licensing platform. It manage
 ## Local development
 
 Requirements:
-- JDK 21
+- JDK 25
 - Maven 3.9+
 - Docker Engine with Docker Compose
 
