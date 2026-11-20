@@ -14,12 +14,30 @@ permissions:
 
 concurrency:
   group: backend-ci-${{ github.workflow }}-${{ github.ref }}
-  cancel-in-progress: true
+  cancel-in-progress: false
 
 jobs:
   backend:
     name: Build and test backend
     runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_DB: easy_license
+          POSTGRES_USER: easy_license
+          POSTGRES_PASSWORD: ci_test_password
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U easy_license -d easy_license"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    env:
+      DATABASE_URL: jdbc:postgresql://localhost:5432/easy_license
+      DATABASE_USERNAME: easy_license
+      DATABASE_PASSWORD: ci_test_password
     steps:
       - name: Check out source
         uses: actions/checkout@v4
