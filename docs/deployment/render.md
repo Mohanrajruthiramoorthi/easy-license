@@ -1,51 +1,74 @@
-# Render deployment
+# Zero-cost MVP deployment
 
-Easy License uses a Render Blueprint to define two isolated environments in Singapore.
-
-| Environment | API service | Database | Branch |
-| --- | --- | --- | --- |
-| Staging | `easy-license-api-staging` | `easy-license-staging-db` | `feature/backend-foundation` |
-| Production | `easy-license-api-production` | `easy-license-production-db` | `main` |
+This deployment targets a **$0/month MVP / internal-testing environment**. It deliberately avoids paid Render resources and avoids Google Cloud billing.
 
 ## Architecture
 
-- Each environment has its own Render web service and PostgreSQL instance.
-- Both databases are private to the Render network (`ipAllowList: []`).
-- The API uses the database's private host/port and credentials injected by the Blueprint.
-- Flyway applies versioned migrations at application startup; Hibernate validates the resulting schema.
-- Render checks `/actuator/health` before routing traffic.
-- Staging uses free compute and a free PostgreSQL database for disposable smoke testing only. Free web services can spin down when idle. A free Render PostgreSQL database has a fixed 1 GB limit and expires 30 days after creation. After expiry, it is inaccessible unless upgraded during Render's 14-day grace period; after that grace period Render deletes the database and its data. Do not store important, customer, or production data in staging.
-- Render permits only one active free PostgreSQL database per workspace. This Blueprint defines one free staging database and one paid production database.
-- Production uses paid compute and a paid PostgreSQL plan. The production database uses Render plan ID `0.1c-256mb` (0.1 CPU, 256 MB RAM; the legacy plan name is `basic-256mb`). Review current pricing and resource limits before applying the Blueprint.
+| Component | Provider | Plan | Purpose |
+| --- | --- | --- | --- |
+| Spring Boot API | Render | Free Docker web service | Runs the existing Java 25 container |
+| PostgreSQL 17 | Neon | Free | Persistent relational database |
+| Angular frontend | Not deployed yet | Firebase Hosting Spark can be used later | The admin/business portals are still planned |
 
-## First-time setup
+There is one API environment on `main`; this is not a separate staging/production setup.
 
-1. Ensure the Render account is connected to the GitHub account that can access the private `Mohanrajruthiramoorthi/easy-license` repository.
-2. Merge the deployment configuration to `main` before provisioning production. The production service is deliberately pinned to `main`.
-3. In Render Dashboard, choose **New → Blueprint**, select the repository and the `main` branch, and use the root `render.yaml`.
-4. Review the Blueprint plan and resource summary. Confirm creation only after checking the paid production service and database plans and the expected monthly cost.
-5. Wait for both databases to become available and both services to finish their first deploy.
-6. Verify:
-   - `https://<staging-service>.onrender.com/actuator/health`
-   - `https://<production-service>.onrender.com/actuator/health`
-7. Keep production data separate. Never point staging at the production database.
+## Free-tier limits and trade-offs
 
-## Deploy flow
+### Render API
 
-- Pushes to `feature/backend-foundation` update staging after the Blueprint is created.
-- Pushes to `main` update production after the Blueprint is created.
-- GitHub Actions runs Maven verification and builds the Docker image on pushes and pull requests.
-- Production should only receive reviewed, tested commits merged to `main`.
+- Free web services include 750 instance-hours per workspace per month, enough for one service to run for a month.
+- A service spins down after 15 minutes without inbound traffic and typically takes about a minute to wake up.
+- Free services may restart at any time and have an ephemeral filesystem. Do not store uploaded files or database data on the container filesystem.
+- Free services are intended for hobby projects and testing, not production applications.
+- If the workspace exceeds free bandwidth or build-pipeline allowances and no payment method is configured, Render suspends the affected services/builds instead of charging an overage.
 
-## Environment variables
+### Neon PostgreSQL
 
-Render injects `DB_HOST`, `DB_PORT`, `DB_NAME`, `DB_USER`, and `DB_PASSWORD` from the matching private database. No database password or connection string belongs in Git.
+- Free plan: 1 GB storage per project, 100 compute-hours per month, and 5 GB public network transfer per project.
+- Compute scales to zero after five minutes of inactivity. The first request after idle may experience database wake-up latency.
+- If compute-hours or network transfer are exhausted, the project compute is suspended until the quota resets or the plan is upgraded. Neon does not bill free-plan overages.
+- Use the pooled connection endpoint to keep application connection usage low.
 
-The application also accepts `DATABASE_URL`, `DATABASE_USERNAME`, and `DATABASE_PASSWORD` for local/CI compatibility. Those take precedence over the Render host-based settings.
+### Firebase Hosting (when the Angular portal exists)
 
-## Operational notes
+Firebase Hosting Spark can host static Angular builds without enabling billing. Current no-cost Hosting allowance is 10 GB stored content and 360 MB/day data transfer. If a Spark quota is reached, the relevant service is paused until the quota resets; it does not automatically become pay-as-you-go. Do not link this Firebase project to a billing account if strict no-billing behavior is required.
 
-- Free staging is suitable only for temporary smoke testing. Set a reminder to upgrade or recreate the free database before its 30-day expiry; export any test data you need before expiry.
-- Production database backups, retention, point-in-time recovery, and service availability depend on the selected Render plan. Confirm these in the Render dashboard.
-- Configure a custom domain only after the first successful deploy and DNS ownership verification.
-- Do not enable public database ingress. Use Render's internal network.
+Cloud Run is intentionally not used in this zero-cost configuration: it requires a Cloud Billing account, and usage beyond its free allowance can be charged.
+
+## Create the Neon database
+
+1. Create a Neon account and a new project.
+2. Select PostgreSQL 17 and the Singapore region if it is offered for your account.
+3. Create a database named `easy_license` (or note the generated database name).
+4. Copy the **pooled** connection hostname and database credentials from Neon.
+5. Do not commit connection strings, usernames, or passwords to Git.
+
+Neon connection details:
+- JDBC URL: `jdbc:postgresql://<pooled-hostname>/<database-name>?sslmode=require`
+- `DATABASE_USERNAME`: the Neon role/user.
+- `DATABASE_PASSWORD`: the Neon role password.
+
+Replace the placeholders with the actual values. Keep the hostname only in the URL; do not include credentials in the URL when using the separate username/password variables.
+
+## Create the Render service
+
+1. Connect Render to the GitHub repository.
+2. Create a Blueprint from the `main` branch and select the root `render.yaml`.
+3. Confirm the plan contains exactly one **Free** web service and no Render Postgres databases or paid resources.
+4. During setup, provide `DATABASE_URL`, `DATABASE_USERNAME`, and `DATABASE_PASSWORD` using the values from Neon.
+5. Deploy and wait for the health check to pass.
+6. Verify `https://<render-service>.onrender.com/actuator/health`.
+
+The API uses Flyway at startup and Hibernate schema validation. The Neon database is external to Render, so its credentials are configured as unsynchronized environment variables in the Blueprint and must be entered in the Render dashboard.
+
+## Cost guardrails
+
+- Do not add a payment method to the Render workspace while the strict $0 requirement applies. If free usage is exhausted, allow the service/build to suspend rather than enabling paid overages.
+- Do not upgrade Neon from Free or enable paid add-ons.
+- Do not attach a Google Cloud billing account or switch Firebase to Blaze for this configuration.
+- Check Render and Neon usage dashboards regularly.
+- No provider can guarantee uninterrupted availability under free-tier limits.
+
+## Production warning
+
+This configuration is for an MVP, integration testing, demos, and low-volume experimentation only. **Do not store real customer data or depend on it for a production licensing/authorization decision.** Free services can sleep, restart, suspend at quota, and have limited operational guarantees. Before onboarding paying customers, move to paid compute/database plans with backups, monitoring, restore testing, and an availability plan.
