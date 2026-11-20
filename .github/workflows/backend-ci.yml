@@ -1,0 +1,57 @@
+name: Backend CI
+
+on:
+  push:
+    branches:
+      - main
+      - feature/**
+  pull_request:
+    branches:
+      - main
+
+permissions:
+  contents: read
+
+concurrency:
+  group: backend-ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  backend:
+    name: Build and test backend
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_DB: easy_license
+          POSTGRES_USER: easy_license
+          POSTGRES_PASSWORD: ci_test_password
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U easy_license -d easy_license"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    env:
+      DATABASE_URL: jdbc:postgresql://localhost:5432/easy_license
+      DATABASE_USERNAME: easy_license
+      DATABASE_PASSWORD: ci_test_password
+    steps:
+      - name: Check out source
+        uses: actions/checkout@v4
+
+      - name: Set up Java 25
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '25'
+          cache: maven
+          cache-dependency-path: backend/pom.xml
+
+      - name: Verify with Maven
+        run: mvn --batch-mode --no-transfer-progress -f backend/pom.xml clean verify
+
+      - name: Build production Docker image
+        run: docker build --file backend/Dockerfile --tag easy-license-backend:ci .
