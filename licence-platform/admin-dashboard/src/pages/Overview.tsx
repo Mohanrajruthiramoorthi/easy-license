@@ -24,17 +24,18 @@ export function Overview({ d, go }: { d: Data; go: (h: string) => void }) {
   }
   payments.forEach((p) => { const m = months.find((x) => x.key === p.paid_on.slice(0, 7)); if (m) m.total += (p.status === 'paid' ? 1 : p.status === 'refunded' ? -1 : 0) * Number(p.amount); });
   const max = Math.max(1, ...months.map((m) => m.total));
-  const owners = d.users.filter((u) => u.role === 'business_owner' && !u.deleted_at).length;
+  const owners = new Set(d.memberships.filter((m) => m.role === 'business_owner' && !m.deleted_at).map((m) => m.business_id)).size;
+  const people = new Set(d.memberships.filter((m) => !m.deleted_at).map((m) => m.user_id)).size;
 
   return (
     <>
       <PageHead title="Overview" sub="Where every business stands today." />
       <div className="stats">
-        <div className="stat"><span>Businesses</span><strong>{bizs.length}</strong><em>{owners} with an owner signed in</em></div>
+        <div className="stat"><span>Businesses</span><strong>{bizs.length}</strong><em>{owners} with an owner joined</em></div>
         <div className="stat"><span>Live licences</span><strong>{live.length}</strong><em>{trials} on trial</em></div>
         <div className="stat"><span>Expiring in 14 days</span><strong>{expiring.length}</strong><em>{lapsed} already lapsed</em></div>
         <div className="stat"><span>On hold now</span><strong>{onHold}</strong><em>holds placed by you</em></div>
-        <div className="stat"><span>Users</span><strong>{d.users.filter((u) => u.role !== 'super_admin' && !u.deleted_at).length}</strong><em>{d.invites.length} invited, not joined</em></div>
+        <div className="stat"><span>Users</span><strong>{people}</strong><em>{d.invites.length} invited, not joined</em></div>
         <div className="stat"><span>Revenue</span><strong>{fmtMoney(revenue)}</strong><em>paid minus refunds</em></div>
       </div>
       <div className="grid2">

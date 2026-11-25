@@ -17,7 +17,7 @@ function viaOAuth(token: string): boolean {
   }
 }
 
-// After a Google sign-in: if the person was invited, create their profile and mark the invite claimed.
+// After a Google sign-in: create the person if invited, and turn every open invite for their email into a membership.
 Deno.serve(async (req: Request) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: cors });
   if (req.method !== "POST") return json({ error: "Method not allowed" }, 405);
@@ -50,19 +50,17 @@ Deno.serve(async (req: Request) => {
       return json({ error: "Your Google email is not verified" }, 403);
     }
 
-    const { data: existing } = await admin.from("users").select("*").eq("id", user.id).is("deleted_at", null).maybeSingle();
-    if (existing) return json({ status: "exists", user: existing });
-
     const meta: any = user.user_metadata ?? {};
     const { data, error } = await admin.rpc("app_claim_invite", {
       p_user_id: user.id, p_email: email, p_name: String(meta.full_name ?? meta.name ?? ""), p_phone: null,
       p_ip: ip, p_request_id: request_id, p_user_agent: ua,
     });
     if (error) throw error;
-    if (!data.ok) return json({ status: "none" });
+    if (!data.ok) return json({ status: data.code === "account_deactivated" ? "deactivated" : "none", message: data.message });
 
     const { data: row } = await admin.from("users").select("*").eq("id", user.id).maybeSingle();
-    return json({ status: "claimed", user: row });
+    // claimed = new memberships were created from open invites; exists = nothing new to claim
+    return json({ status: data.code === "already_claimed" ? "exists" : "claimed", claimed: data.claimed ?? 0, user: row });
   } catch (e) {
     await log("invite.claim", "failed", "internal_error", null, { message: String((e as any)?.message ?? e) });
     return json({ error: "Something went wrong. Please try again." }, 500);

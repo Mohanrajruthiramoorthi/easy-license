@@ -13,12 +13,12 @@ export function AddBusinessModal({ onClose, onDone }: { onClose: () => void; onD
         if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) throw new Error('Enter the owner\'s Google email.');
         const phone = f.ownerPhone.trim() ? normalisePhone(f.ownerPhone) : null;
         if (f.ownerPhone.trim() && !phone) throw new Error('Enter a valid phone number, for example 9840011223.');
-        const r = await cmd<{ business_id: string }>('cmd_create_business', { p_name: f.name.trim(), p_owner_email: email, p_owner_name: f.ownerName.trim() || null, p_owner_phone: phone });
-        toast('Business added. The owner joins by signing in with Google.'); onDone(r.business_id);
+        const r = await cmd<{ business_id: string; owner_added?: boolean }>('cmd_create_business', { p_name: f.name.trim(), p_owner_email: email, p_owner_name: f.ownerName.trim() || null, p_owner_phone: phone });
+        toast(r.owner_added ? 'Business added. The owner already has a login and can see it now.' : 'Business added. The owner joins by signing in with Google.'); onDone(r.business_id);
       }}>
         <Field label="Business name"><input id="bizName" value={f.name} onChange={(e) => set('name', e.target.value)} autoFocus /></Field>
         <Field label="Owner name"><input id="bizOwnerName" value={f.ownerName} onChange={(e) => set('ownerName', e.target.value)} /></Field>
-        <Field label="Owner Google email"><input id="bizOwnerEmail" type="email" value={f.ownerEmail} onChange={(e) => set('ownerEmail', e.target.value)} /></Field>
+        <Field label="Owner Google email (can be someone who already uses another business)"><input id="bizOwnerEmail" type="email" value={f.ownerEmail} onChange={(e) => set('ownerEmail', e.target.value)} /></Field>
         <Field label="Owner phone (optional)"><input id="bizOwnerPhone" type="tel" value={f.ownerPhone} onChange={(e) => set('ownerPhone', e.target.value)} /></Field>
       </Form>
     </Modal>
@@ -33,11 +33,11 @@ export function EnrolModal({ businessId, isAdmin, onClose, onDone }: { businessI
       <Form submitLabel="Enrol user" onCancel={onClose} onSubmit={async () => {
         const email = f.email.trim().toLowerCase();
         if (!f.name.trim() || !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) throw new Error('Enter a name and a valid Google email.');
-        const body: Record<string, string> = { name: f.name.trim(), email, phone: f.phone.trim() };
-        if (isAdmin) { body.business_id = businessId; body.role = f.role; }
-        const { error } = await supabase.functions.invoke('enrol-user', { body });
+        const body: Record<string, string> = { name: f.name.trim(), email, phone: f.phone.trim(), business_id: businessId };
+        if (isAdmin) body.role = f.role;
+        const { data, error } = await supabase.functions.invoke('enrol-user', { body });
         if (error) throw new Error(await errText(error));
-        toast(`Invited ${email}. They join by signing in with Google.`); onDone();
+        toast(data?.member_added ? `${email} already has a login and was added to this business.` : `Invited ${email}. They join by signing in with Google.`); onDone();
       }}>
         <Field label="Name"><input id="eName" value={f.name} onChange={(e) => set('name', e.target.value)} autoFocus /></Field>
         <Field label="Google email"><input id="eEmail" type="email" value={f.email} onChange={(e) => set('email', e.target.value)} /></Field>
@@ -148,7 +148,8 @@ export function HoldModal({ target, onClose, onDone }: { target: HoldTargetInfo;
   const effRollover = rollover ?? f.reason !== 'non_payment';
   const effect = target.type === 'licence' ? 'The business is blocked until the hold is released.'
     : target.type === 'business' ? 'Everyone in this business is blocked until the hold is released.'
-    : target.isOwner ? 'This is the business owner. Holding them locks the whole business.' : 'Only this user is blocked.';
+    : target.type === 'user' ? 'This person is blocked in EVERY business they belong to. If they own a business, that business is locked too.'
+    : target.isOwner ? 'This is the business owner. Holding them locks this whole business. Their other businesses are not affected.' : 'Only this person in this business is blocked. Their other businesses are not affected.';
   return (
     <Modal title={`Put on hold: ${target.label}`} onClose={onClose}>
       <Form submitLabel="Place hold" onCancel={onClose} onSubmit={async () => {
@@ -183,9 +184,11 @@ export function useActions(reload: () => void) {
   const remove = (entity: string, id: string, what: string) => setAsk({ title: `Delete ${what}`, confirm: 'Delete', hint: 'Nothing is erased. It is hidden and can be restored later.', ok: `${what} deleted`, run: (r) => cmd('cmd_soft_delete', { p_entity: entity, p_id: id, p_reason: r }) });
   const restore = (entity: string, id: string, what: string) => setAsk({ title: `Restore ${what}`, confirm: 'Restore', ok: `${what} restored`, run: (r) => cmd('cmd_restore', { p_entity: entity, p_id: id, p_reason: r }) });
   const release = (holdId: string) => setAsk({ title: 'Release hold', confirm: 'Release', optional: true, ok: 'Hold released', run: (r) => cmd('cmd_release_hold', { p_hold: holdId, p_note: r || null }) });
-  const setStatus = (userId: string, status: 'active' | 'inactive', name: string) => setAsk({ title: `${status === 'active' ? 'Activate' : 'Deactivate'} ${name}`, confirm: status === 'active' ? 'Activate' : 'Deactivate', ok: status === 'active' ? 'User activated' : 'User deactivated', run: (r) => cmd('cmd_set_user_status', { p_user: userId, p_status: status, p_reason: r }) });
+  const removeMember = (id: string, name: string, biz: string) => setAsk({ title: `Remove ${name} from ${biz}`, confirm: 'Remove', hint: 'Only this business is affected. Their login and any other business stay as they are. Nothing is erased; it can be restored later.', ok: `${name} removed from ${biz}`, run: (r) => cmd('cmd_remove_member', { p_membership: id, p_reason: r }) });
+  const setMemberStatus = (id: string, status: 'active' | 'inactive', name: string) => setAsk({ title: `${status === 'active' ? 'Activate' : 'Deactivate'} ${name} in this business`, confirm: status === 'active' ? 'Activate' : 'Deactivate', ok: status === 'active' ? 'Activated' : 'Deactivated', run: (r) => cmd('cmd_set_membership_status', { p_membership: id, p_status: status, p_reason: r }) });
+  const setStatus = (userId: string, status: 'active' | 'inactive', name: string) => setAsk({ title: `${status === 'active' ? 'Activate' : 'Deactivate'} ${name} everywhere`, confirm: status === 'active' ? 'Activate' : 'Deactivate', hint: 'This applies to every business the person belongs to.', ok: status === 'active' ? 'Person activated' : 'Person deactivated', run: (r) => cmd('cmd_set_user_status', { p_user: userId, p_status: status, p_reason: r }) });
   const cancelInvite = (id: string, email: string) => setAsk({ title: `Cancel invite for ${email}`, confirm: 'Cancel invite', ok: 'Invite cancelled', run: (r) => cmd('cmd_cancel_invite', { p_invite: id, p_reason: r }) });
   const revoke = (id: string) => setAsk({ title: 'Revoke licence', confirm: 'Revoke', hint: 'A revoked licence cannot be reactivated. Add a new licence instead.', ok: 'Licence revoked', run: (r) => cmd('cmd_revoke_licence', { p_licence: id, p_reason: r }) });
-  return { node, placeHold: setHold, remove, restore, release, setStatus, cancelInvite, revoke };
+  return { node, placeHold: setHold, remove, restore, release, setStatus, removeMember, setMemberStatus, cancelInvite, revoke };
 }
 

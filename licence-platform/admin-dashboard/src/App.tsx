@@ -23,20 +23,21 @@ function SignIn() {
   );
 }
 
-function Register() {
+function Register({ onCancel }: { onCancel?: () => void }) {
   const { session, signOut, refresh } = useAuth();
   const meta = (session?.user.user_metadata ?? {}) as { full_name?: string; name?: string };
   const [f, setF] = useState({ biz: '', name: meta.full_name || meta.name || '', phone: '' });
   return (
     <div className="gate"><div className="gatecard">
       <div><h1>Register your business</h1><p style={{ marginTop: 6 }}>Signed in as {session?.user.email}. You get a 14-day trial straight away.</p></div>
-      <Form submitLabel="Register" onCancel={signOut} onSubmit={async () => {
+      <Form submitLabel="Register" onCancel={onCancel ?? signOut} onSubmit={async () => {
         if (!f.biz.trim() || !f.name.trim()) throw new Error('Business name and your name are required.');
         const phone = normalisePhone(f.phone);
         if (!phone) throw new Error('Enter a valid phone number, for example 9840011223 or +919840011223.');
         const { data, error } = await supabase.functions.invoke('register', { body: { business_name: f.biz.trim(), name: f.name.trim(), phone } });
         if (error) throw new Error(await errText(error));
         await refresh();
+        onCancel?.();
         toast(`Registered. Your business number is ${fmtBizNo(data.business_no)}. Your 14-day trial has started.`);
       }}>
         <Field label="Business name"><input id="rBiz" value={f.biz} onChange={(e) => setF({ ...f, biz: e.target.value })} autoFocus /></Field>
@@ -56,6 +57,9 @@ const BLOCK_TEXT: Record<string, string> = {
   licence_held: 'Your licence has been put on hold by Licence Desk support.',
   user_inactive: 'Your account is inactive.',
   business_deleted: 'This business account has been closed.',
+  membership_held: 'Your access to this business has been put on hold by Licence Desk support.',
+  membership_inactive: 'Your access to this business is inactive.',
+  not_member: 'You no longer belong to this business.',
 };
 const READ_ONLY_TEXT: Record<string, string> = {
   licence_expired: 'Your licence has expired. You can view your data, but you cannot make changes until it is renewed.',
@@ -76,9 +80,10 @@ function Locked() {
 }
 
 function Shell() {
-  const { profile, access, signOut } = useAuth();
+  const { profile, access, signOut, owned, activeId, setActive } = useAuth();
   const me = profile!;
   const admin = me.role === 'super_admin';
+  const [registering, setRegistering] = useState(false);
   const [route, setRoute] = useState(hashNow() || (admin ? 'overview' : 'team'));
   const [showDeleted, setShowDeleted] = useState(false);
   const { data, error, loading, reload } = useData();
@@ -93,10 +98,13 @@ function Shell() {
   let body: JSX.Element | null = null;
   if (data) {
     if (!admin) {
-      const l = me.business_id ? latestLicence(data.licences, me.business_id) : undefined; const s = licenceBadge(l);
-      const biz = data.businesses.find((b) => b.id === me.business_id);
+      const l = activeId ? latestLicence(data.licences, activeId) : undefined; const s = licenceBadge(l);
+      const biz = data.businesses.find((b) => b.id === activeId);
       const readOnly = access?.mode === 'read_only';
-      if (route === 'activity') body = <ActivityPage d={data} admin={false} myBusinessId={me.business_id} />;
+      if (access?.mode === 'blocked') body = (
+        <div className="notice bad" role="alert"><strong>{biz ? `${biz.name} (${fmtBizNo(biz.business_no)})` : 'This business'} is on hold.</strong> {BLOCK_TEXT[access.reason] ?? 'Access is currently paused.'}{owned.length > 1 ? ' You can switch to another business from the menu.' : ' Contact support to resolve this. Your data is safe.'}</div>
+      );
+      else if (route === 'activity') body = <ActivityPage d={data} admin={false} myBusinessId={activeId} />;
       else body = (<>
         {readOnly && <div className="notice warn" role="status">{READ_ONLY_TEXT[access!.reason] ?? 'Your account is read-only right now.'}</div>}
         <div className={'notice ' + (s.tone === 'ok' ? 'ok' : s.tone === 'warn' ? 'warn' : 'bad')}>
@@ -104,7 +112,7 @@ function Shell() {
           {l && l.paused_days > 0 && ` (includes ${l.paused_days} day${l.paused_days === 1 ? '' : 's'} added back after a hold)`}
         </div>
         {biz && <OwnerProfile b={biz} reload={reload} />}
-        <UsersPage d={data} me={me} reload={reload} />
+        <UsersPage d={data} me={me} reload={reload} businessId={activeId} />
       </>);
     } else if (route.startsWith('business-')) body = <BusinessDetail d={data} id={route.slice(9)} go={go} reload={reload} />;
     else if (route === 'businesses') body = <Businesses d={data} go={go} reload={reload} />;
@@ -120,13 +128,20 @@ function Shell() {
       <div className="shell">
         <aside className="rail">
           <div className="brand"><b>Licence Desk</b><span>{admin ? 'App owner' : 'Business owner'}</span></div>
+          {!admin && owned.length > 0 && (
+            <label className="bizpick">Business
+              <select id="bizSwitch" value={activeId ?? ''} onChange={(e) => setActive(e.target.value)} aria-label="Business">
+                {owned.map((m) => <option key={m.business.id} value={m.business.id}>{m.business.name} ({fmtBizNo(m.business.business_no)}){m.mode === 'blocked' ? ' - on hold' : ''}</option>)}
+              </select>
+            </label>
+          )}
           <nav aria-label="Sections">{nav.map(([k, label]) => <button key={k} aria-current={section === k ? 'page' : undefined} onClick={() => go(k)}>{label}</button>)}</nav>
           {admin && <label className="checkrow railcheck"><input id="showDeleted" type="checkbox" checked={showDeleted} onChange={(e) => setShowDeleted(e.target.checked)} /> Show deleted</label>}
-          <div className="me"><div><b>{me.name}</b>{me.email}</div><button onClick={signOut}>Sign out</button></div>
+          <div className="me"><div><b>{me.name}</b>{me.email}</div>{!admin && <button onClick={() => setRegistering(true)}>Register another business</button>}<button onClick={signOut}>Sign out</button></div>
         </aside>
         <main>
           <Status loading={loading && !data} error={error} onRetry={reload} />
-          {body}
+          {registering ? <Register onCancel={() => { setRegistering(false); reload(); }} /> : body}
         </main>
       </div>
     </ShowDeletedCtx.Provider>

@@ -9,7 +9,7 @@ const json = (body: unknown, status = 200) =>
   new Response(JSON.stringify(body), { status, headers: { ...cors, "Content-Type": "application/json" } });
 
 const STATUS: Record<string, number> = {
-  forbidden: 403, read_only: 403, not_found: 404, already_user: 409, already_invited: 409, invalid_email: 400,
+  forbidden: 403, read_only: 403, not_found: 404, already_member: 409, already_invited: 409, invalid_email: 400,
 };
 
 function viaOAuth(token: string): boolean {
@@ -21,7 +21,7 @@ function viaOAuth(token: string): boolean {
   }
 }
 
-// Invites a person by email. They join the business when they sign in with Google.
+// Adds a person to a business by email. Existing people are added straight away; new people join when they sign in with Google.
 // Permission and licence rules live in the database (app_create_invite); this function only authenticates.
 Deno.serve(async (req: Request) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: cors });
@@ -54,9 +54,14 @@ Deno.serve(async (req: Request) => {
     const name = String(body.name ?? "").trim();
     if (!name || name.length > 100) return json({ error: "A name (max 100 characters) is required" }, 400);
 
-    // Owners always enrol into their own business; the database ignores a business_id they pass.
-    const { data: caller } = await admin.from("users").select("role, business_id").eq("id", authData.user.id).is("deleted_at", null).maybeSingle();
-    const businessId = caller?.role === "business_owner" ? caller.business_id : String(body.business_id ?? "");
+    // The business must be named. An owner with exactly one business may leave it out; the database still checks
+    // that the caller is an active owner of whichever business is named.
+    let businessId = String(body.business_id ?? "");
+    if (!businessId) {
+      const { data: owned } = await admin.from("memberships").select("business_id")
+        .eq("user_id", authData.user.id).eq("role", "business_owner").is("deleted_at", null);
+      if (owned && owned.length === 1) businessId = owned[0].business_id;
+    }
     if (!businessId) return json({ error: "business_id is required" }, 400);
 
     const { data, error } = await admin.rpc("app_create_invite", {

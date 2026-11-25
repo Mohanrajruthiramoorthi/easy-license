@@ -18,7 +18,8 @@ end $f$;
 
 do $t$
 declare
-  admin_id uuid; o_id uuid := gen_random_uuid(); u_id uuid := gen_random_uuid(); emp2_id uuid := gen_random_uuid();
+  admin_id uuid; o_id uuid := gen_random_uuid(); u_id uuid := gen_random_uuid(); emp2_id uuid := gen_random_uuid(); c_id uuid := gen_random_uuid();
+  bid2 uuid; mid uuid;
   bid uuid; lid uuid; r text; n int := 0; v record; today date := (now() at time zone 'Asia/Kolkata')::date;
   st jsonb; cnt int; hid uuid;
   procedure_ok boolean;
@@ -47,11 +48,12 @@ begin
 
   -- owner and users exist (auth rows simulated)
   insert into auth.users (id, email, aud, role) values (o_id, 'owner-test@example.com', 'authenticated', 'authenticated'), (u_id, 'user-test@example.com', 'authenticated', 'authenticated'), (emp2_id, 'emp2-test@example.com', 'authenticated', 'authenticated');
-  insert into public.users (id, business_id, name, email, role) values (o_id, bid, 'Test Owner', 'owner-test@example.com', 'business_owner'), (u_id, bid, 'Test User', 'user-test@example.com', 'user'), (emp2_id, bid, 'Test Emp2', 'emp2-test@example.com', 'user');
+  insert into public.users (id, name, email, role) values (o_id, 'Test Owner', 'owner-test@example.com', 'user'), (u_id, 'Test User', 'user-test@example.com', 'user'), (emp2_id, 'Test Emp2', 'emp2-test@example.com', 'user');
+  insert into public.memberships (user_id, business_id, role) values (o_id, bid, 'business_owner'), (u_id, bid, 'user'), (emp2_id, bid, 'user');
   update public.businesses set owner_id = o_id where id = bid;
 
   -- 4. no licence => read_only
-  st := private.access_state(o_id);
+  st := private.access_state(o_id, bid);
   assert st->>'mode' = 'read_only' and st->>'reason' = 'no_licence', 'no licence should be read_only: '||st; n := n + 1;
 
   -- 5. licence + one trial only
@@ -60,7 +62,7 @@ begin
   r := pg_temp.as_user(admin_id, format($$select public.cmd_create_licence(%L, 'trial', %L, %L)$$, bid, today, today + 14));
   assert r like '%already has a trial%', 'second trial should fail: '||coalesce(r,'allowed'); n := n + 1;
   select id into lid from public.licences where business_id = bid;
-  assert private.access_state(o_id)->>'mode' = 'full', 'valid licence should be full'; n := n + 1;
+  assert private.access_state(o_id, bid)->>'mode' = 'full', 'valid licence should be full'; n := n + 1;
 
   -- 6. rollover maths (past, released holds)
   select * into v from public.licence_overview where id = lid;
@@ -92,16 +94,16 @@ begin
   assert r like '%cannot be put on hold%', 'cannot hold app owner: '||coalesce(r,'allowed'); n := n + 1;
   r := pg_temp.as_user(admin_id, format($$select public.cmd_place_hold('user', %L, 'policy', 'checking a complaint')$$, emp2_id));
   assert r is null, 'hold user failed: '||coalesce(r,''); n := n + 1;
-  assert private.access_state(emp2_id)->>'reason' = 'user_held', 'held user is blocked'; n := n + 1;
-  assert private.access_state(u_id)->>'mode' = 'full' and private.access_state(o_id)->>'mode' = 'full', 'holding a user affects only that user'; n := n + 1;
+  assert private.access_state(emp2_id, bid)->>'reason' = 'user_held', 'held user is blocked'; n := n + 1;
+  assert private.access_state(u_id, bid)->>'mode' = 'full' and private.access_state(o_id, bid)->>'mode' = 'full', 'holding a user affects only that user'; n := n + 1;
   r := pg_temp.as_user(admin_id, format($$select public.cmd_place_hold('user', %L, 'policy', 'again')$$, emp2_id));
   assert r like '%already has an open hold%', 'duplicate open hold rejected: '||coalesce(r,'allowed'); n := n + 1;
 
   r := pg_temp.as_user(admin_id, format($$select public.cmd_place_hold('user', %L, 'non_payment', 'invoice 42 unpaid')$$, o_id));
   assert r is null, 'hold owner failed: '||coalesce(r,''); n := n + 1;
-  assert private.access_state(o_id)->>'reason' = 'user_held', 'owner blocked'; n := n + 1;
-  assert private.access_state(u_id)->>'mode' = 'blocked' and private.access_state(u_id)->>'reason' = 'owner_held', 'owner hold locks the whole business'; n := n + 1;
-  assert private.access_state(admin_id)->>'mode' = 'full', 'admin keeps full access'; n := n + 1;
+  assert private.access_state(o_id, bid)->>'reason' = 'user_held', 'owner blocked'; n := n + 1;
+  assert private.access_state(u_id, bid)->>'mode' = 'blocked' and private.access_state(u_id, bid)->>'reason' = 'owner_held', 'owner hold locks the whole business'; n := n + 1;
+  assert private.access_state(admin_id, bid)->>'mode' = 'full', 'admin keeps full access'; n := n + 1;
   -- RLS: blocked owner sees no licences
   r := pg_temp.as_user(o_id, $q$do $x$ begin if (select count(*) from public.licences) <> 0 then raise exception 'LEAK'; end if; end $x$$q$);
   assert r is null, 'blocked owner must not read licences: '||coalesce(r,''); n := n + 1;
@@ -109,22 +111,22 @@ begin
   select id into hid from public.holds where target_id = o_id and released_at is null;
   r := pg_temp.as_user(admin_id, format($$select public.cmd_release_hold(%L, 'paid')$$, hid));
   assert r is null, 'release failed: '||coalesce(r,''); n := n + 1;
-  assert private.access_state(u_id)->>'mode' = 'full', 'released => business unlocked'; n := n + 1;
+  assert private.access_state(u_id, bid)->>'mode' = 'full', 'released => business unlocked'; n := n + 1;
   assert (select count(*) from public.audit_log where table_name = 'holds' and row_id = hid) = 2, 'hold place + release audited'; n := n + 1;
 
   -- licence hold
   r := pg_temp.as_user(admin_id, format($$select public.cmd_place_hold('licence', %L, 'policy', 'licence review')$$, lid));
   assert r is null, 'licence hold failed: '||coalesce(r,''); n := n + 1;
-  assert private.access_state(o_id)->>'reason' = 'licence_held' and (select state from public.licence_overview where id = lid) = 'held', 'licence hold blocks'; n := n + 1;
+  assert private.access_state(o_id, bid)->>'reason' = 'licence_held' and (select state from public.licence_overview where id = lid) = 'held', 'licence hold blocks'; n := n + 1;
   select id into hid from public.holds where target_id = lid and released_at is null;
   perform pg_temp.as_user(admin_id, format($$select public.cmd_release_hold(%L, 'ok')$$, hid));
 
   -- auto-release (scheduled)
   r := pg_temp.as_user(admin_id, format($$select public.cmd_place_hold('business', %L, 'customer_request', 'pause 1 hour', now() + interval '1 hour')$$, bid));
   assert r is null, 'scheduled hold failed: '||coalesce(r,''); n := n + 1;
-  assert private.access_state(u_id)->>'reason' = 'business_held', 'business hold blocks all'; n := n + 1;
+  assert private.access_state(u_id, bid)->>'reason' = 'business_held', 'business hold blocks all'; n := n + 1;
   update public.holds set release_at = now() - interval '1 second', placed_at = now() - interval '1 minute' where target_id = bid and released_at is null;
-  assert private.access_state(u_id)->>'mode' = 'full', 'scheduled hold expired by itself'; n := n + 1;
+  assert private.access_state(u_id, bid)->>'mode' = 'full', 'scheduled hold expired by itself'; n := n + 1;
   perform private.settle_holds();
   assert (select count(*) from public.holds where target_id = bid and released_at is not null and release_note like 'Auto-released%') = 1, 'settle records auto-release'; n := n + 1;
 
@@ -132,7 +134,7 @@ begin
   update public.licences set start_date = today - 30, expiry_date = today - 5 where id = lid;
   -- (past holds still extend; clear their effect for this check by marking them non-rollover)
   update public.holds set rollover = false where business_id = bid;
-  assert private.access_state(u_id)->>'mode' = 'read_only' and private.access_state(u_id)->>'reason' = 'licence_expired', 'expired => read_only'; n := n + 1;
+  assert private.access_state(u_id, bid)->>'mode' = 'read_only' and private.access_state(u_id, bid)->>'reason' = 'licence_expired', 'expired => read_only'; n := n + 1;
   r := pg_temp.as_user(o_id, format($$select public.app_create_invite(%L, %L, 'new@example.com')$$, o_id, bid));
   assert r like 'permission denied%', 'app_* is not callable by users: '||coalesce(r,'allowed'); n := n + 1;
   st := public.app_create_invite(o_id, bid, 'new@example.com', 'New');
@@ -142,7 +144,49 @@ begin
   st := public.app_create_invite(o_id, bid, 'new@example.com', 'New');
   assert (st->>'ok')::boolean, 'licensed owner can enrol: '||st; n := n + 1;
   st := public.app_create_invite(o_id, bid, 'user-test@example.com', 'Dup');
-  assert st->>'code' = 'already_user', 'existing user email refused'; n := n + 1;
+  assert st->>'code' = 'already_member', 'existing member refused: '||st; n := n + 1;
+
+  -- 8b. one person, many businesses
+  r := pg_temp.as_user(admin_id, $$select public.cmd_create_business('Second Traders', 'user-test@example.com', 'Test User')$$);
+  assert r is null, 'create business for an existing person failed: '||coalesce(r,''); n := n + 1;
+  select id into bid2 from public.businesses where name = 'Second Traders';
+  assert (select owner_id = u_id from public.businesses where id = bid2), 'existing person becomes owner directly'; n := n + 1;
+  assert (select count(*) from public.invites where business_id = bid2) = 0, 'no invite needed for an existing login'; n := n + 1;
+  assert private.access_state(u_id, bid2)->>'reason' = 'no_licence' and private.access_state(u_id, bid)->>'mode' = 'full', 'access is evaluated per business'; n := n + 1;
+  st := (select public.my_context() from (select set_config('request.jwt.claims', json_build_object('sub', u_id, 'role', 'authenticated')::text, true)) z);
+  assert jsonb_array_length(st->'memberships') = 2, 'my_context lists both businesses: '||st; n := n + 1;
+  perform set_config('request.jwt.claims', '', true);
+  -- hold one membership: only that business is blocked
+  select id into mid from public.memberships where user_id = u_id and business_id = bid;
+  r := pg_temp.as_user(admin_id, format($$select public.cmd_place_hold('membership', %L, 'policy', 'review')$$, mid));
+  assert r is null, 'membership hold failed: '||coalesce(r,''); n := n + 1;
+  assert private.access_state(u_id, bid)->>'reason' = 'membership_held' and private.access_state(u_id, bid2)->>'reason' = 'no_licence', 'membership hold is per business'; n := n + 1;
+  select id into hid from public.holds where target_id = mid and released_at is null;
+  perform pg_temp.as_user(admin_id, format($$select public.cmd_release_hold(%L, 'ok')$$, hid));
+  -- adding an existing person to another business is immediate; twice is refused
+  st := public.app_create_invite(o_id, bid, 'emp2-test@example.com', 'x');
+  assert st->>'code' = 'already_member', 'already a member: '||st; n := n + 1;
+  insert into auth.users (id, email, aud, role) values (c_id, 'multi@example.com', 'authenticated', 'authenticated');
+  st := public.app_create_invite(admin_id, bid, 'multi@example.com', 'Multi');
+  st := public.app_create_invite(admin_id, bid2, 'multi@example.com', 'Multi');
+  assert (st->>'ok')::boolean, 'same email can be invited to two businesses: '||st; n := n + 1;
+  st := public.app_claim_invite(c_id, 'multi@example.com', 'Multi');
+  assert (st->>'claimed')::int = 2 and (select count(*) from public.memberships where user_id = c_id) = 2, 'claim turns every invite into a membership: '||st; n := n + 1;
+  -- an owner removes a user from their business only
+  select id into mid from public.memberships where user_id = c_id and business_id = bid;
+  r := pg_temp.as_user(o_id, format($$select public.cmd_remove_member(%L, 'left the team')$$, mid));
+  assert r is null, 'owner removes member failed: '||coalesce(r,''); n := n + 1;
+  assert private.access_state(c_id, bid)->>'reason' = 'not_member' and (select deleted_at is null from public.users where id = c_id)
+    and (select count(*) from public.memberships where user_id = c_id and deleted_at is null) = 1, 'removal touches only that business'; n := n + 1;
+  assert (select count(*) from public.audit_log where table_name = 'memberships' and row_id = mid and action = 'soft_delete' and actor_id = o_id) = 1, 'removal audited'; n := n + 1;
+  select id into mid from public.memberships where user_id = u_id and business_id = bid2;
+  r := pg_temp.as_user(o_id, format($$select public.cmd_remove_member(%L, 'not mine')$$, mid));
+  assert r like 'Not allowed%', 'owner cannot remove people from another business: '||coalesce(r,'allowed'); n := n + 1;
+  select id into mid from public.memberships where user_id = o_id and business_id = bid;
+  r := pg_temp.as_user(o_id, format($$select public.cmd_remove_member(%L, 'self')$$, mid));
+  assert r like 'Not allowed%', 'owner cannot remove an owner: '||coalesce(r,'allowed'); n := n + 1;
+  r := pg_temp.as_user(o_id, $q$do $x$ begin if (select count(*) from public.memberships where business_id <> (select business_id from public.memberships where user_id = auth.uid() limit 1)) <> 0 then raise exception 'LEAK'; end if; end $x$$q$);
+  assert r is null, 'owner must not see other businesses memberships: '||coalesce(r,''); n := n + 1;
 
   -- 9. soft delete + restore, reasons mandatory, audited
   r := pg_temp.as_user(admin_id, format($$select public.cmd_soft_delete('user', %L, '')$$, emp2_id));

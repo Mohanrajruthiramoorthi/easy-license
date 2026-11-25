@@ -7,8 +7,13 @@ export const supabase = createClient(
   { auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: true } },
 );
 
-export type Role = 'super_admin' | 'business_owner' | 'user';
-export interface Profile { id: string; business_id: string | null; name: string; email: string; phone: string | null; role: Role; status: 'active' | 'inactive'; created_at: string; deleted_at: string | null; delete_reason: string | null }
+export type Role = 'super_admin' | 'user';
+export type MemberRole = 'business_owner' | 'user';
+/** A person (one Google login). Which businesses they belong to, and in what role, is in memberships. */
+export interface Profile { id: string; name: string; email: string; phone: string | null; role: Role; status: 'active' | 'inactive'; created_at: string; deleted_at: string | null; delete_reason: string | null }
+/** One person in one business. A person can have several, with different roles. */
+export interface Membership { id: string; user_id: string; business_id: string; role: MemberRole; status: 'active' | 'inactive'; created_at: string; deleted_at: string | null; delete_reason: string | null }
+export interface MembershipCtx { membership_id: string; role: MemberRole; business: { id: string; business_no: number; name: string }; mode: 'full' | 'read_only' | 'blocked'; reason: string; valid_until: string | null }
 export interface Business {
   id: string; business_no: number; name: string; owner_id: string | null; created_at: string; deleted_at: string | null; delete_reason: string | null;
   legal_name: string | null; business_type: string | null; email: string | null; phone: string | null;
@@ -32,9 +37,9 @@ export interface LicenceRow {
 }
 export interface Payment { id: string; business_id: string; paid_on: string; amount: number; status: 'paid' | 'failed' | 'refunded'; created_at: string; deleted_at: string | null }
 export interface Invite { id: string; business_id: string; email: string; name: string; phone: string | null; role: 'business_owner' | 'user'; created_at: string; claimed_at: string | null; deleted_at: string | null }
-export type HoldTarget = 'licence' | 'business' | 'user';
+export type HoldTarget = 'licence' | 'business' | 'user' | 'membership';
 export interface Hold {
-  id: string; target_type: HoldTarget; target_id: string; business_id: string; reason_code: string; note: string | null; rollover: boolean;
+  id: string; target_type: HoldTarget; target_id: string; business_id: string | null; reason_code: string; note: string | null; rollover: boolean;
   placed_by: string | null; placed_at: string; release_at: string | null; released_by: string | null; released_at: string | null; release_note: string | null;
 }
 export const HOLD_REASONS: [string, string][] = [['non_payment', 'Non-payment'], ['policy', 'Policy'], ['security', 'Security'], ['customer_request', 'Customer request'], ['investigation', 'Investigation'], ['other', 'Other']];
@@ -44,7 +49,7 @@ export interface TimelineRow {
   at: string; kind: 'change' | 'event'; what: string; actor_id: string | null; actor_role: string | null; reason: string | null; outcome: string | null;
   business_id: string | null; row_id: string | null; changed_columns: string[] | null; source: string | null; ip: string | null;
 }
-export interface Access { mode: 'full' | 'read_only' | 'blocked'; reason: string; valid_until: string | null; business: { id: string; business_no: number; name: string } | null }
+export interface Access { mode: 'full' | 'read_only' | 'blocked'; reason: string; valid_until: string | null }
 
 export const today = () => new Date().toLocaleDateString('en-CA', { timeZone: 'Asia/Kolkata' });
 export const fmtDateTime = (iso: string) => new Date(iso).toLocaleString('en-IN', { timeZone: 'Asia/Kolkata', day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' });

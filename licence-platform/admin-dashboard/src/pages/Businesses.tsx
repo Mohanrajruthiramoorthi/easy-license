@@ -28,7 +28,7 @@ export function Businesses({ d, go, reload }: { d: Data; go: (h: string) => void
                   <td>{owner ? <>{owner.name}<span className="sub">{owner.email}</span></> : <span className="sub">Not joined yet</span>}</td>
                   <td><Badge tone={s.tone}>{s.label}</Badge></td>
                   <td className="num">{l ? fmtDate(l.effective_expiry_date) : '-'}</td>
-                  <td className="right num">{d.users.filter((u) => u.business_id === b.id && !u.deleted_at).length}</td>
+                  <td className="right num">{d.memberships.filter((m) => m.business_id === b.id && !m.deleted_at).length}</td>
                   <td><Badge tone={acc.tone}>{acc.label}</Badge></td>
                 </tr>
               );
@@ -43,7 +43,9 @@ export function Businesses({ d, go, reload }: { d: Data; go: (h: string) => void
 
 function HoldsPanel({ d, businessId, release }: { d: Data; businessId: string; release: (id: string) => void }) {
   const holds = d.holds.filter((h) => h.business_id === businessId);
-  const target = (h: Hold) => h.target_type === 'business' ? 'Whole business' : h.target_type === 'licence' ? 'Licence' : userName(d, h.target_id);
+  const target = (h: Hold) => h.target_type === 'business' ? 'Whole business' : h.target_type === 'licence' ? 'Licence'
+    : h.target_type === 'membership' ? userName(d, d.memberships.find((m) => m.id === h.target_id)?.user_id ?? null)
+    : userName(d, h.target_id);
   return (
     <section className="panel">
       <header><h2>Holds ({holds.filter(isOpenHold).length} open)</h2></header>
@@ -71,7 +73,7 @@ export function BusinessDetail({ d, id, go, reload }: { d: Data; id: string; go:
   const b = d.businesses.find((x) => x.id === id);
   if (!b) return <><button className="link back" onClick={() => go('businesses')}>Back to businesses</button><Empty title="Business not found" hint="It may not exist, or you may not have access." /></>;
 
-  const users = vis(d.users.filter((u) => u.business_id === id), show);
+  const members = vis(d.memberships.filter((m) => m.business_id === id), show);
   const invites = vis(d.invites.filter((i) => i.business_id === id), show);
   const licences = vis(d.licences.filter((l) => l.business_id === id), show);
   const payments = vis(d.payments.filter((p) => p.business_id === id), show);
@@ -106,23 +108,25 @@ export function BusinessDetail({ d, id, go, reload }: { d: Data; id: string; go:
 
       <div className="stack" style={{ marginTop: 16 }}>
         <section className="panel">
-          <header><h2>Team ({users.length + invites.length})</h2><button className="btn small" onClick={() => setModal('enrol')}>Enrol user</button></header>
-          {users.length + invites.length === 0 ? <Empty title="No one here yet" hint="Enrol the business owner by their Google email." /> : (
+          <header><h2>Team ({members.length + invites.length})</h2><button className="btn small" onClick={() => setModal('enrol')}>Add user</button></header>
+          {members.length + invites.length === 0 ? <Empty title="No one here yet" hint="Add the business owner by their Google email." /> : (
             <div className="tablewrap"><table><thead><tr><th>Name</th><th>Role</th><th>Status</th><th></th></tr></thead><tbody>
               {invites.map((i) => (
                 <tr key={i.id}><td>{i.name}<span className="sub">{i.email}</span></td><td>{i.role === 'business_owner' ? 'Owner' : 'User'}</td><td><Badge tone={i.deleted_at ? 'muted' : 'info'}>{i.deleted_at ? 'cancelled' : 'invited'}</Badge></td>
                   <td className="right">{i.deleted_at ? <button className="btn ghost small" onClick={() => act.restore('invite', i.id, 'invite')}>Restore</button> : <button className="btn ghost small" onClick={() => act.cancelInvite(i.id, i.email)}>Cancel invite</button>}</td></tr>
               ))}
-              {users.map((u) => {
-                const held = openHoldsFor(d, 'user', u.id);
+              {members.map((m) => {
+                const u = d.users.find((x) => x.id === m.user_id); const name = u?.name ?? 'Unknown person';
+                const mHeld = openHoldsFor(d, 'membership', m.id); const pHeld = openHoldsFor(d, 'user', m.user_id);
                 return (
-                  <tr key={u.id}><td>{u.name}<span className="sub">{u.email}{u.phone ? ` / ${u.phone}` : ''}</span></td><td>{u.role === 'business_owner' ? 'Owner' : 'User'}</td>
-                    <td>{u.deleted_at ? <Badge tone="muted">deleted</Badge> : held.length ? <Badge tone="bad">on hold</Badge> : <Badge tone={u.status === 'active' ? 'ok' : 'muted'}>{u.status}</Badge>}</td>
+                  <tr key={m.id}><td>{name}<span className="sub">{u?.email}{u?.phone ? ` / ${u.phone}` : ''}</span></td><td>{m.role === 'business_owner' ? 'Owner' : 'User'}</td>
+                    <td>{m.deleted_at ? <Badge tone="muted">removed</Badge> : pHeld.length ? <Badge tone="bad">person on hold</Badge> : mHeld.length ? <Badge tone="bad">on hold</Badge> : <Badge tone={m.status === 'active' ? 'ok' : 'muted'}>{m.status}</Badge>}</td>
                     <td className="right rowactions">
-                      {u.deleted_at ? <button className="btn ghost small" onClick={() => act.restore('user', u.id, 'user')}>Restore</button> : <>
-                        {held.length ? <button className="btn ghost small" onClick={() => act.release(held[0].id)}>Release hold</button> : <button className="btn ghost small" onClick={() => act.placeHold({ type: 'user', id: u.id, label: u.name, isOwner: u.id === b.owner_id })}>Hold</button>}
-                        <button className="btn ghost small" onClick={() => act.setStatus(u.id, u.status === 'active' ? 'inactive' : 'active', u.name)}>{u.status === 'active' ? 'Deactivate' : 'Activate'}</button>
-                        <button className="btn ghost small" onClick={() => act.remove('user', u.id, 'user')}>Delete</button></>}
+                      {m.deleted_at ? <button className="btn ghost small" onClick={() => act.restore('membership', m.id, 'membership')}>Restore</button> : <>
+                        {mHeld.length ? <button className="btn ghost small" onClick={() => act.release(mHeld[0].id)}>Release hold</button> : <button className="btn ghost small" onClick={() => act.placeHold({ type: 'membership', id: m.id, label: `${name} in ${b.name}`, isOwner: m.user_id === b.owner_id })}>Hold here</button>}
+                        {pHeld.length ? <button className="btn ghost small" onClick={() => act.release(pHeld[0].id)}>Release person hold</button> : <button className="btn ghost small" onClick={() => act.placeHold({ type: 'user', id: m.user_id, label: name })}>Hold everywhere</button>}
+                        <button className="btn ghost small" onClick={() => act.setMemberStatus(m.id, m.status === 'active' ? 'inactive' : 'active', name)}>{m.status === 'active' ? 'Deactivate' : 'Activate'}</button>
+                        <button className="btn ghost small" onClick={() => act.removeMember(m.id, name, b.name)}>Remove</button></>}
                     </td></tr>
                 );
               })}

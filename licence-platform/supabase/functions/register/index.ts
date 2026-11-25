@@ -13,7 +13,7 @@ const json = (body: unknown, status = 200) =>
   new Response(JSON.stringify(body), { status, headers: { ...cors, "Content-Type": "application/json" } });
 
 const STATUS: Record<string, number> = {
-  rate_limited: 429, already_registered: 409, has_invite: 409, invalid_input: 400,
+  rate_limited: 429, too_many_businesses: 409, account_deactivated: 403, invalid_input: 400,
 };
 
 function viaOAuth(token: string): boolean {
