@@ -9,6 +9,15 @@ Read `docs/adl/ADL-033-supabase-phase1-licence-recording.md` first, then `README
 - `admin-dashboard/` — Vite + React 18 + TS dashboard, hash routing, IST dates. Env: `VITE_SUPABASE_URL`, `VITE_SUPABASE_KEY` (publishable key only).
 - Supabase project ref: `qeiqtmxrjcweiysunkww`. Hosted on Vercel project `licence-desk` (root dir `licence-platform/admin-dashboard`). Branch: `supabase-licence-platform`.
 
+## People and businesses (migration F)
+- `users` = the person (one Google login); platform role is `super_admin` or `user`.
+- `memberships` = one person in one business with a role (`business_owner` | `user`). A person can hold many, e.g. user in A and owner of B and C.
+- Access is per business: `private.access_state(user, business)`. Locked owner => only that business locked. Holds can target `licence`, `business`, `user` (person, all businesses) or `membership` (one person in one business).
+- Removing someone from a business = `cmd_remove_member` (soft-deletes that membership only). Never delete the login for this.
+- An existing person added to another business is added directly (no invite). New logins get invites; `claim-profile` turns every open invite into a membership.
+- Self-registration is capped at 3 owned businesses per person; the app owner can add more.
+- The Supabase auth user cannot be deleted while a `users` row exists (FK is ON DELETE RESTRICT, by design).
+
 ## Rules that must not be broken
 - NO hard deletes. Soft delete only (`deleted_at`); triggers block DELETE.
 - Everything is audited: `audit_log` (data changes), `event_log` (attempts, denials, registrations). Denials are returned as results AND logged.
